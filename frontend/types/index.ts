@@ -149,12 +149,21 @@ export interface Association {
 // Forgetting Prediction (ML)
 // ---------------------------------------------------------------------------
 
+export interface SurvivalEstimatePoint {
+  horizonHours: number;
+  survivalProbability: number;
+  forgettingRisk: number;
+  ciLower?: number;
+  ciUpper?: number;
+}
+
 export interface ForgettingPrediction {
   id: string;
   taskId: string;
   taskTitle: string;
   riskScore: number; // 0-100
   riskLevel: RiskLevel;
+  riskCategory?: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
   reasons: PredictionReason[];
   generatedAt: ISODateTime;
   modelVersion: string;
@@ -162,12 +171,18 @@ export interface ForgettingPrediction {
   naturalLanguageExplanation?: string;
   baseValue?: number;
   confidenceInterval?: [number, number];
+  isColdStart?: boolean;
+  coldStartTier?: string;
+  survivalEstimates?: SurvivalEstimatePoint[];
+  medianSurvivalHours?: number | null;
+  inferenceLatencyMs?: number;
+  error?: string | null;
 }
 
 export interface PredictionReason {
-  label: string; // e.g. "Previous forgetting frequency"
-  detail: string;
-  weight: number; // 0-1 contribution to score
+  label?: string; // e.g. "Previous forgetting frequency"
+  detail?: string;
+  weight?: number; // 0-1 contribution to score
   feature?: string;
   impact?: number; // signed SHAP contribution
   direction?: "increasing" | "decreasing";
