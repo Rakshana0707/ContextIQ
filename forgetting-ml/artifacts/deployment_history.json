@@ -1,5 +1,20 @@
 [
   {
+    "event_id": "DEP-20261120180002",
+    "event_type": "PROMOTION",
+    "timestamp": "2026-11-20T18:00:02.408961+00:00",
+    "model_name": "logistic_regression",
+    "model_version": "1.2.0",
+    "approved_by": "Lead Data Scientist",
+    "reason": "Approved challenger after temporal benchmarking verification (Promoted from candidate v1.2.0)",
+    "metrics": {
+      "pr_auc": 0.4679,
+      "roc_auc": 0.6772,
+      "brier_score": 0.1841
+    },
+    "archive_path": "E:\\Downloads \ud83d\udd03\\ContextIQ-main\\ContextIQ-main\\forgetting-ml\\artifacts\\model_archive\\model_v1.0.0_20261120_180002.joblib"
+  },
+  {
     "event_id": "DEP-20261120172823",
     "event_type": "PROMOTION",
     "timestamp": "2026-11-20T17:28:23.106728+00:00",

@@ -4,8 +4,9 @@ api.py
 Defines the FastAPI router for the Forgetting Prediction Engine.
 """
 
+from typing import Optional
 from pathlib import Path
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, HTTPException
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -20,6 +21,9 @@ from app.schemas import (
     DriftReportResponse, RetrainingTriggerRequest, RetrainingStatusResponse,
     RetrainingApprovalRequest, RollbackRequest, RollbackResponse,
     DeploymentHistoryResponse,
+    ModelMetadataResponse, ModelListResponse, ModelApprovalRequest,
+    ModelTransitionRequest, ModelRegistryRollbackRequest, ModelHealthResponse,
+    ModelMetricsSummaryResponse,
 )
 from app.inference import ForgettingPredictor
 from app.survival_service import SurvivalService
@@ -28,6 +32,11 @@ from ml.monitoring.reference_store import ReferenceStore
 from ml.monitoring.retraining_pipeline import ControlledRetrainingPipeline
 from ml.monitoring.rollback import ModelRollbackManager
 from ml.monitoring.triggers import RetrainingTriggerPolicy
+from ml.registry import (
+    ModelRegistry, ModelLifecycleState, ModelFamily, TaskType,
+    verify_admin_access, ModelRegistryError, ChecksumMismatchError,
+    ArtifactNotFoundError, InvalidStateTransitionError,
+)
 
 router = APIRouter()
 
@@ -45,6 +54,7 @@ def health():
     )
 
 
+@router.post("/predict", response_model=PredictionResponse, tags=["predictions"])
 @router.post("/api/v1/predictions/forgetting", response_model=PredictionResponse, tags=["predictions"])
 def predict_forgetting(task: TaskFeatures):
     try:
@@ -59,13 +69,19 @@ def predict_forgetting(task: TaskFeatures):
         raise HTTPException(status_code=503, detail="Prediction service unavailable.") from e
 
 
+@router.post("/batch_predict", response_model=BatchPredictionResponse, tags=["predictions"])
 @router.post("/api/v1/predictions/forgetting/batch", response_model=BatchPredictionResponse, tags=["predictions"])
 def predict_forgetting_batch(request: BatchPredictionRequest):
     try:
-        predictor = ForgettingPredictor.instance()
+        predictor = ForgettingPredictor.get_predictor_for_version(request.version)
         tasks = [t.model_dump() for t in request.tasks]
         results = predictor.predict_batch(tasks)
-        return BatchPredictionResponse(predictions=[PredictionResponse(**r) for r in results])
+        total_lat = sum(r.get("inference_latency_ms", 0.0) for r in results)
+        return BatchPredictionResponse(
+            predictions=[PredictionResponse(**r) for r in results],
+            total_latency_ms=round(total_lat, 3),
+            model_version=predictor.model_version,
+        )
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
     except ValueError as e:
@@ -375,5 +391,205 @@ def get_deployment_history():
         )
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch deployment history: {str(e)}") from e
+
+
+# =====================================================================
+# Centralized Model Registry Endpoints (Phase 2.9)
+# =====================================================================
+
+@router.get("/models", response_model=ModelListResponse, tags=["models"])
+@router.get("/api/v1/models", response_model=ModelListResponse, tags=["models"])
+def list_registered_models(
+    task_type: Optional[str] = None,
+    status: Optional[str] = None,
+    family: Optional[str] = None,
+):
+    try:
+        reg = ModelRegistry.instance()
+        tt = TaskType(task_type) if task_type else None
+        st = ModelLifecycleState(status) if status else None
+        fam = ModelFamily(family) if family else None
+
+        models = reg.list_models(task_type=tt, status=st, family=fam)
+        return ModelListResponse(
+            total_models=len(models),
+            models=[ModelMetadataResponse(**m.to_dict()) for m in models],
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to list models: {str(e)}") from e
+
+
+@router.get("/models/production", tags=["models"])
+@router.get("/api/v1/models/production", tags=["models"])
+def get_production_models(task_type: Optional[str] = None):
+    try:
+        reg = ModelRegistry.instance()
+        if task_type:
+            tt = TaskType(task_type)
+            prod = reg.get_production_model(tt)
+            if not prod:
+                raise HTTPException(status_code=404, detail=f"No production model found for task '{task_type}'")
+            return ModelMetadataResponse(**prod.to_dict())
+
+        # Return active production models across both task types
+        clf_prod = reg.get_production_model(TaskType.BINARY_CLASSIFICATION)
+        surv_prod = reg.get_production_model(TaskType.SURVIVAL_ANALYSIS)
+        return {
+            "binary_classification": ModelMetadataResponse(**clf_prod.to_dict()) if clf_prod else None,
+            "survival_analysis": ModelMetadataResponse(**surv_prod.to_dict()) if surv_prod else None,
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch production model: {str(e)}") from e
+
+
+@router.get("/models/metrics", response_model=ModelMetricsSummaryResponse, tags=["models"])
+@router.get("/api/v1/models/metrics", response_model=ModelMetricsSummaryResponse, tags=["models"])
+def get_model_metrics_summary():
+    try:
+        reg = ModelRegistry.instance()
+        summary = reg.get_metrics_summary()
+        return ModelMetricsSummaryResponse(**summary)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch metrics summary: {str(e)}") from e
+
+
+@router.get("/models/health", response_model=ModelHealthResponse, tags=["models"])
+@router.get("/api/v1/models/health", response_model=ModelHealthResponse, tags=["models"])
+def get_model_registry_health():
+    try:
+        reg = ModelRegistry.instance()
+        models = reg.list_models()
+        integrity_map = {}
+        for m in models:
+            try:
+                reg.verify_model_integrity(m.model_id)
+                integrity_map[m.model_id] = True
+            except Exception:
+                integrity_map[m.model_id] = False
+
+        clf_prod = reg.get_production_model(TaskType.BINARY_CLASSIFICATION)
+        surv_prod = reg.get_production_model(TaskType.SURVIVAL_ANALYSIS)
+
+        prod_ok = bool(
+            clf_prod is not None
+            and surv_prod is not None
+            and integrity_map.get(clf_prod.model_id, False)
+            and integrity_map.get(surv_prod.model_id, False)
+        )
+
+        return ModelHealthResponse(
+            status="HEALTHY" if prod_ok else "DEGRADED",
+            total_registered_models=len(models),
+            active_production_models={
+                "binary_classification": clf_prod.model_version if clf_prod else None,
+                "survival_analysis": surv_prod.model_version if surv_prod else None,
+            },
+            integrity_verification=integrity_map,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Health check failure: {str(e)}") from e
+
+
+@router.get("/models/{model_id}", response_model=ModelMetadataResponse, tags=["models"])
+@router.get("/api/v1/models/{model_id}", response_model=ModelMetadataResponse, tags=["models"])
+def get_model_details(model_id: str):
+    reg = ModelRegistry.instance()
+    meta = reg.get_model(model_id)
+    if not meta:
+        raise HTTPException(status_code=404, detail=f"Model '{model_id}' not found in registry.")
+    return ModelMetadataResponse(**meta.to_dict())
+
+
+@router.get("/models/{model_id}/versions", response_model=ModelListResponse, tags=["models"])
+@router.get("/api/v1/models/{model_id}/versions", response_model=ModelListResponse, tags=["models"])
+def get_model_versions(model_id: str):
+    reg = ModelRegistry.instance()
+    meta = reg.get_model(model_id)
+    if not meta:
+        raise HTTPException(status_code=404, detail=f"Model '{model_id}' not found in registry.")
+
+    versions = reg.get_versions(meta.model_name)
+    return ModelListResponse(
+        total_models=len(versions),
+        models=[ModelMetadataResponse(**m.to_dict()) for m in versions],
+    )
+
+
+@router.post("/models/{model_id}/approve", response_model=ModelMetadataResponse, tags=["models"])
+@router.post("/api/v1/models/{model_id}/approve", response_model=ModelMetadataResponse, tags=["models"])
+def approve_model(
+    model_id: str,
+    request: ModelApprovalRequest,
+    admin: str = Depends(verify_admin_access),
+):
+    try:
+        reg = ModelRegistry.instance()
+        meta = reg.approve_model(
+            model_id=model_id,
+            actor=request.approved_by or "Lead Data Scientist",
+            rationale=request.rationale,
+        )
+        return ModelMetadataResponse(**meta.to_dict())
+    except (InvalidStateTransitionError, ModelRegistryError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Approval error: {str(e)}") from e
+
+
+@router.post("/models/{model_id}/transition", response_model=ModelMetadataResponse, tags=["models"])
+@router.post("/api/v1/models/{model_id}/transition", response_model=ModelMetadataResponse, tags=["models"])
+def transition_model_lifecycle(
+    model_id: str,
+    request: ModelTransitionRequest,
+    admin: str = Depends(verify_admin_access),
+):
+    try:
+        reg = ModelRegistry.instance()
+        new_state = ModelLifecycleState(request.new_state)
+        meta = reg.transition_state(
+            model_id=model_id,
+            new_state=new_state,
+            actor=request.actor or "MLOps Admin",
+            notes=request.notes,
+        )
+        return ModelMetadataResponse(**meta.to_dict())
+    except (InvalidStateTransitionError, ModelRegistryError) as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=f"Invalid state: {str(e)}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Transition error: {str(e)}") from e
+
+
+@router.post("/models/{model_id}/rollback", tags=["models"])
+@router.post("/api/v1/models/{model_id}/rollback", tags=["models"])
+def rollback_model_to_version(
+    model_id: str,
+    request: ModelRegistryRollbackRequest,
+    admin: str = Depends(verify_admin_access),
+):
+    try:
+        reg = ModelRegistry.instance()
+        tt = TaskType(request.task_type or "binary_classification")
+        restored, prev = reg.rollback(
+            task_type=tt,
+            target_version=request.target_version,
+            actor=request.approved_by or "MLOps Admin",
+            reason=request.reason or "Rollback via API",
+        )
+        return {
+            "status": "ROLLBACK_SUCCESSFUL",
+            "task_type": tt.value,
+            "restored_model": ModelMetadataResponse(**restored.to_dict()),
+            "archived_model": ModelMetadataResponse(**prev.to_dict()) if prev else None,
+        }
+    except (ChecksumMismatchError, ArtifactNotFoundError) as e:
+        raise HTTPException(status_code=409, detail=f"Artifact integrity error during rollback: {str(e)}")
+    except ModelRegistryError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Rollback error: {str(e)}") from e
 
 

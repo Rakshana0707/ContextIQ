@@ -100,16 +100,22 @@ class PredictionResponse(BaseModel):
     is_cold_start: bool = False
     cold_start_tier: Optional[str] = None
     confidence_interval: Optional[List[float]] = None
+    inference_latency_ms: Optional[float] = None
 
     model_config = {'protected_namespaces': ()}
 
 
 class BatchPredictionRequest(BaseModel):
     tasks: List[TaskFeatures]
+    version: Optional[str] = None  # Optional version selection
 
 
 class BatchPredictionResponse(BaseModel):
     predictions: List[PredictionResponse]
+    total_latency_ms: Optional[float] = None
+    model_version: Optional[str] = None
+
+    model_config = {'protected_namespaces': ()}
 
 
 class HealthResponse(BaseModel):
@@ -330,5 +336,78 @@ class RollbackResponse(BaseModel):
 class DeploymentHistoryResponse(BaseModel):
     total_events: int
     history: List[Dict[str, Any]]
+
+
+# =====================================================================
+# Model Registry Schemas (Phase 2.9)
+# =====================================================================
+
+class ModelMetadataResponse(BaseModel):
+    model_id: str
+    model_name: str
+    model_version: str
+    model_family: str
+    task_type: str
+    training_dataset_version: str
+    feature_schema_version: str
+    target_definition_version: str
+    training_timestamp: str
+    registered_at: str
+    artifact_location: str
+    artifact_checksum: str
+    lifecycle_state: str
+    updated_at: str
+    evaluation_metrics: Dict[str, Any] = Field(default_factory=dict)
+    calibration_config: Dict[str, Any] = Field(default_factory=dict)
+    shap_compatibility: Dict[str, Any] = Field(default_factory=dict)
+    description: Optional[str] = None
+    experiment_id: Optional[str] = None
+    approved_by: Optional[str] = None
+    approval_notes: Optional[str] = None
+
+    model_config = {'protected_namespaces': ()}
+
+
+class ModelListResponse(BaseModel):
+    total_models: int
+    models: List[ModelMetadataResponse]
+
+    model_config = {'protected_namespaces': ()}
+
+
+class ModelApprovalRequest(BaseModel):
+    approved_by: Optional[str] = "Lead Data Scientist"
+    rationale: Optional[str] = "Approved after passing performance and calibration thresholds"
+
+
+class ModelTransitionRequest(BaseModel):
+    new_state: str
+    actor: Optional[str] = "MLOps Admin"
+    notes: Optional[str] = None
+
+
+class ModelRegistryRollbackRequest(BaseModel):
+    task_type: Optional[str] = "binary_classification"
+    target_version: str
+    approved_by: Optional[str] = "MLOps Admin"
+    reason: Optional[str] = "Operational rollback triggered via Model Registry"
+
+
+class ModelHealthResponse(BaseModel):
+    status: str
+    total_registered_models: int
+    active_production_models: Dict[str, Any]
+    integrity_verification: Dict[str, bool]
+
+    model_config = {'protected_namespaces': ()}
+
+
+class ModelMetricsSummaryResponse(BaseModel):
+    total_models: int
+    production_models: Dict[str, Any]
+    models_by_state: Dict[str, int]
+    models_by_family: Dict[str, int]
+
+    model_config = {'protected_namespaces': ()}
 
 

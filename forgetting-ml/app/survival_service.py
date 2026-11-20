@@ -57,6 +57,9 @@ class SurvivalService:
         horizons: Optional[List[float]] = None,
     ) -> Dict[str, Any]:
         """Predicts S(t) across requested horizons for a single task observation."""
+        import time
+        t_start = time.perf_counter()
+
         if horizons is None or len(horizons) == 0:
             horizons = [6.0, 12.0, 24.0, 48.0, 168.0]
 
@@ -96,6 +99,8 @@ class SurvivalService:
                 median_hours = p["horizon_hours"]
                 break
 
+        latency_ms = round((time.perf_counter() - t_start) * 1000.0, 3)
+
         return {
             "task_id": t_id,
             "prediction_timestamp": now_iso,
@@ -104,6 +109,7 @@ class SurvivalService:
             "model_version": self.model_version,
             "reliable_horizon_max_hours": MAX_RELIABLE_HORIZON_HOURS,
             "is_extrapolated": is_extrapolated,
+            "inference_latency_ms": latency_ms,
         }
 
     def predict_batch(

@@ -7,9 +7,13 @@ the trained model artifact.
 """
 
 import json
+import logging
 import sys
+import threading
+import time
+from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
 from pathlib import Path
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 import joblib
 import numpy as np
@@ -24,19 +28,23 @@ if _LOCAL_DEPS.exists():
 from ml.explainability.explainer import ForgettingExplainer, risk_level_from_probability
 from ml.training.config import MODEL_VERSION
 
+logger = logging.getLogger(__name__)
 ARTIFACT_PATH = ROOT / "artifacts" / "model_bundle.joblib"
 
 
 class ForgettingPredictor:
     _instance = None
+    _version_cache: Dict[str, "ForgettingPredictor"] = {}
+    _lock = threading.Lock()
 
-    def __init__(self):
-        if not ARTIFACT_PATH.exists():
+    def __init__(self, artifact_path: Optional[Path] = None, expected_version: Optional[str] = None):
+        target_path = Path(artifact_path) if artifact_path else ARTIFACT_PATH
+        if not target_path.exists():
             raise FileNotFoundError(
-                f"Model artifact not found at {ARTIFACT_PATH}. "
+                f"Model artifact not found at {target_path}. "
                 "Run `python -m ml.training.train` first."
             )
-        bundle = joblib.load(ARTIFACT_PATH)
+        bundle = joblib.load(target_path)
         if not isinstance(bundle, dict):
             raise ValueError("Model artifact has an invalid format.")
         required_keys = {
@@ -47,7 +55,13 @@ class ForgettingPredictor:
         missing_keys = sorted(required_keys - bundle.keys())
         if missing_keys:
             raise ValueError(f"Model artifact is missing required fields: {missing_keys}")
-        if bundle["model_version"] != MODEL_VERSION:
+        if expected_version:
+            if bundle["model_version"] != expected_version:
+                raise ValueError(
+                    f"Model artifact version {bundle['model_version']!r} does not match "
+                    f"expected version {expected_version!r}."
+                )
+        elif bundle["model_version"] != MODEL_VERSION:
             raise ValueError(
                 f"Model artifact version {bundle['model_version']!r} does not match "
                 f"runtime version {MODEL_VERSION!r}."
@@ -102,6 +116,44 @@ class ForgettingPredictor:
             cls._instance = cls()
         return cls._instance
 
+    @classmethod
+    def get_predictor_for_version(cls, version: Optional[str] = None) -> "ForgettingPredictor":
+        """
+        Retrieves a predictor instance for the requested model version.
+        If version is None, 'production', or matches runtime MODEL_VERSION, returns the active production instance.
+        Otherwise dynamically loads and caches the registered version with fallback to production.
+        """
+        if not version or version.lower() == "production" or version == MODEL_VERSION:
+            return cls.instance()
+
+        clean_ver = version.lstrip("v")
+        with cls._lock:
+            if clean_ver in cls._version_cache:
+                return cls._version_cache[clean_ver]
+
+            try:
+                from ml.registry.registry import ModelRegistry
+                from ml.registry.enums import TaskType
+                reg = ModelRegistry.instance()
+                # Find binary classification model matching version
+                matched = None
+                for m in reg.list_models(task_type=TaskType.BINARY_CLASSIFICATION):
+                    if m.model_version.lstrip("v") == clean_ver:
+                        matched = m
+                        break
+
+                if matched:
+                    artifact_path = ROOT / matched.artifact_location
+                    if artifact_path.exists():
+                        predictor = cls(artifact_path=artifact_path, expected_version=matched.model_version)
+                        cls._version_cache[clean_ver] = predictor
+                        return predictor
+            except Exception as e:
+                logger.warning("Failed to load predictor for version %s: %s. Falling back to production.", version, e)
+
+            # Fallback to active production model
+            return cls.instance()
+
     def _to_dataframe(self, tasks: List[Dict[str, Any]]) -> pd.DataFrame:
         cols = self.categorical_features + self.numeric_features
         missing_by_task = {
@@ -117,10 +169,7 @@ class ForgettingPredictor:
             raise ValueError(f"Missing required features: {missing}")
         return df[cols]
 
-    def predict_batch(self, tasks: List[Dict[str, Any]], top_k: int = 3) -> List[Dict[str, Any]]:
-        if not tasks:
-            return []
-
+    def _run_predict_batch(self, tasks: List[Dict[str, Any]], top_k: int = 3) -> List[Dict[str, Any]]:
         df = self._to_dataframe(tasks)
         X_transformed = self.preprocessor.transform(df)
         if hasattr(X_transformed, "toarray"):
@@ -182,8 +231,46 @@ class ForgettingPredictor:
             })
         return results
 
-    def predict_single(self, task: Dict[str, Any], top_k: int = 3) -> Dict[str, Any]:
-        return self.predict_batch([task], top_k=top_k)[0]
+    def predict_batch(
+        self,
+        tasks: List[Dict[str, Any]],
+        top_k: int = 3,
+        timeout_seconds: Optional[float] = None,
+    ) -> List[Dict[str, Any]]:
+        """
+        Executes batch inference with precise latency measurement and optional timeout guard.
+        Attaches 'inference_latency_ms' to each prediction record.
+        """
+        if not tasks:
+            return []
+
+        t_start = time.perf_counter()
+
+        if timeout_seconds and timeout_seconds > 0:
+            with ThreadPoolExecutor(max_workers=1) as executor:
+                future = executor.submit(self._run_predict_batch, tasks, top_k)
+                try:
+                    results = future.result(timeout=timeout_seconds)
+                except FutureTimeoutError:
+                    raise TimeoutError(f"Inference execution timed out after {timeout_seconds} seconds.")
+        else:
+            results = self._run_predict_batch(tasks, top_k)
+
+        total_latency_ms = (time.perf_counter() - t_start) * 1000.0
+        per_task_latency_ms = round(total_latency_ms / max(1, len(tasks)), 3)
+
+        for res in results:
+            res["inference_latency_ms"] = per_task_latency_ms
+
+        return results
+
+    def predict_single(
+        self,
+        task: Dict[str, Any],
+        top_k: int = 3,
+        timeout_seconds: Optional[float] = None,
+    ) -> Dict[str, Any]:
+        return self.predict_batch([task], top_k=top_k, timeout_seconds=timeout_seconds)[0]
 
     def explain_single(self, task: Dict[str, Any], top_k: int = 5) -> Dict[str, Any]:
         """Generates a detailed local explanation with attributions and grounded NLG."""

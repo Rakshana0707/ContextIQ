@@ -1,0 +1,114 @@
+[
+  {
+    "model_id": "clf_logreg_v1.1.0",
+    "model_name": "logistic_regression",
+    "model_version": "1.1.0",
+    "model_family": "linear",
+    "task_type": "binary_classification",
+    "training_dataset_version": "1.0.0",
+    "feature_schema_version": "2.2.0",
+    "target_definition_version": "2.1.0",
+    "training_timestamp": "2026-11-20T12:00:00Z",
+    "registered_at": "2026-11-20T17:54:31.180868+00:00",
+    "artifact_location": "artifacts/model_bundle.joblib",
+    "artifact_checksum": "0c4729a19f4f8685cc637ea811aae5cc423a1b8abf6f160f6c780e0fa89216c3",
+    "lifecycle_state": "PRODUCTION",
+    "updated_at": "2026-11-20T17:54:31.180932+00:00",
+    "evaluation_metrics": {
+      "pr_auc": 0.4451,
+      "roc_auc": 0.6583,
+      "brier_score": 0.1839
+    },
+    "calibration_config": {
+      "method": "platt",
+      "calibrated": true
+    },
+    "shap_compatibility": {
+      "supported": true,
+      "explainer": "LinearExplainer"
+    },
+    "feature_names_raw": [],
+    "feature_names_transformed": [],
+    "description": "ContextIQ Phase 2.5/2.7 production binary forgetting-risk model.",
+    "experiment_id": null,
+    "approved_by": "MLOps System",
+    "approval_notes": null
+  },
+  {
+    "model_id": "surv_cox_v2.3.0",
+    "model_name": "cox_proportional_hazards",
+    "model_version": "2.3.0",
+    "model_family": "survival",
+    "task_type": "survival_analysis",
+    "training_dataset_version": "2.3.0",
+    "feature_schema_version": "2.3.0",
+    "target_definition_version": "2.3.0",
+    "training_timestamp": "2026-11-20T13:00:00Z",
+    "registered_at": "2026-11-20T17:54:31.191166+00:00",
+    "artifact_location": "artifacts/survival_bundle.joblib",
+    "artifact_checksum": "5ae973838c7f9feafc8bd4bd8b8470aa86341440bf7420bebdd7594a38863113",
+    "lifecycle_state": "PRODUCTION",
+    "updated_at": "2026-11-20T17:54:31.191231+00:00",
+    "evaluation_metrics": {
+      "concordance_index": 0.6205,
+      "integrated_brier_score": 0.1412
+    },
+    "calibration_config": {
+      "method": "survival_hazard"
+    },
+    "shap_compatibility": {
+      "supported": false
+    },
+    "feature_names_raw": [],
+    "feature_names_transformed": [],
+    "description": "ContextIQ Phase 2.3 production Cox survival analysis model.",
+    "experiment_id": null,
+    "approved_by": "MLOps System",
+    "approval_notes": null
+  },
+  {
+    "model_id": "clf_logistic_regression_v1.9.9",
+    "model_name": "logistic_regression",
+    "model_version": "1.9.9",
+    "model_family": "linear",
+    "task_type": "binary_classification",
+    "training_dataset_version": "1.0.0",
+    "feature_schema_version": "v1.1",
+    "target_definition_version": "2.1.0",
+    "training_timestamp": "2026-11-20T13:29:02.560542+00:00",
+    "registered_at": "2026-11-20T17:54:31.201142+00:00",
+    "artifact_location": "artifacts/models/binary_classification/logistic_regression/v1.9.9/model_bundle.joblib",
+    "artifact_checksum": "placeholder-sha256",
+    "lifecycle_state": "CANDIDATE",
+    "updated_at": "2026-11-20T17:54:31.201174+00:00",
+    "evaluation_metrics": {
+      "pr_auc": 0.4679,
+      "roc_auc": 0.6772,
+      "f1": 0.4897,
+      "precision": 0.3917,
+      "recall": 0.6532,
+      "brier_score": 0.1839,
+      "log_loss": 0.5504,
+      "ece": 0.0124,
+      "threshold": 0.25,
+      "confusion_matrix": [
+        [
+          3465,
+          2255
+        ],
+        [
+          771,
+          1452
+        ]
+      ]
+    },
+    "calibration_config": {},
+    "shap_compatibility": {},
+    "feature_names_raw": [],
+    "feature_names_transformed": [],
+    "description": "Phase 2.4 candidate benchmark for logistic_regression",
+    "experiment_id": "EXP-LOGI-1795181342",
+    "approved_by": "Lead Data Scientist",
+    "approval_notes": null
+  }
+]
