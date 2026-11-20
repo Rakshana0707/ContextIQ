@@ -1,0 +1,23 @@
+{
+  "total_tasks": 50170,
+  "valid_training_samples": 42884,
+  "excluded_samples": 7286,
+  "outcome_distribution": {
+    "COMPLETED_ON_TIME": 29485,
+    "EXPLICITLY_FORGOTTEN": 8824,
+    "ABANDONED": 4211,
+    "COMPLETED_LATE": 2810,
+    "POSTPONED": 1554,
+    "CENSORED": 2180,
+    "OVERDUE": 812,
+    "DORMANT": 284
+  },
+  "will_forget_distribution": {
+    "0": 33849,
+    "1": 13035,
+    "None": 3276
+  },
+  "anomalies_by_check": {},
+  "total_anomalies": 0,
+  "validation_status": "PASSED"
+}
