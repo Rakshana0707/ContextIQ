@@ -8,11 +8,11 @@ predicted probabilities will be used for decision-making.
 
 | Model | Brier Score | ECE | Interpretation |
 |-------|-------------|-----|----------------|
-| dummy_most_frequent | 0.2764 | 0.0000 | Excellent |
-| logistic_regression | 0.2273 | 0.1992 | Poor |
-| random_forest | 0.2179 | 0.1772 | Poor |
-| xgboost | 0.2312 | 0.1905 | Poor |
-| logistic_regression_calibrated | 0.1856 | 0.0178 | Excellent |
+| dummy_most_frequent | 0.2799 | 0.0000 | Excellent |
+| logistic_regression | 0.2234 | 0.1966 | Poor |
+| random_forest | 0.2161 | 0.1750 | Poor |
+| xgboost | 0.2198 | 0.1691 | Poor |
+| logistic_regression_calibrated | 0.2234 | 0.1966 | Poor |
 
 ## Metric Definitions
 
@@ -41,4 +41,4 @@ For forgetting-risk prediction, calibration matters because:
 
 | Bin | Mean Predicted | Fraction Positive | Sample Count | Calibration Error |
 |-----|----------------|-------------------|--------------|-------------------|
-| 1 | 0.000 | 0.276 | 0 | 0.276 |
+| 1 | 0.000 | 0.280 | 0 | 0.280 |

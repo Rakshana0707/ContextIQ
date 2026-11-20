@@ -1,27 +1,27 @@
 {
   "dummy_most_frequent": {
-    "brier_score": 0.27644444444444444,
+    "brier_score": 0.27986906710310966,
     "expected_calibration_error": 0.0,
     "n_bins": 10
   },
   "logistic_regression": {
-    "brier_score": 0.22733315226656625,
-    "expected_calibration_error": 0.1992027149898045,
+    "brier_score": 0.22340280800567053,
+    "expected_calibration_error": 0.19658334244639877,
     "n_bins": 10
   },
   "random_forest": {
-    "brier_score": 0.21787867356961735,
-    "expected_calibration_error": 0.17721233325915697,
+    "brier_score": 0.21612076194336097,
+    "expected_calibration_error": 0.17503429550894856,
     "n_bins": 10
   },
   "xgboost": {
-    "brier_score": 0.2311706483124747,
-    "expected_calibration_error": 0.19052071542314036,
+    "brier_score": 0.2198372185230255,
+    "expected_calibration_error": 0.1691320001801906,
     "n_bins": 10
   },
   "logistic_regression_calibrated": {
-    "brier_score": 0.18564359954174217,
-    "expected_calibration_error": 0.017840968299208275,
+    "brier_score": 0.22340280800567053,
+    "expected_calibration_error": 0.19658334244639877,
     "n_bins": 10
   }
 }

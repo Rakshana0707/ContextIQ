@@ -35,6 +35,8 @@ context-engine/artifacts/
 
 # Generated datasets (regenerate with scripts)
 forgetting-ml/datasets/tasks_raw.csv
+forgetting-ml/datasets/survival_tasks.csv
+forgetting-ml/datasets/survival_events.csv
 forgetting-ml/datasets/users.csv
 context-engine/datasets/*.csv
 data-engine/data/synthetic/

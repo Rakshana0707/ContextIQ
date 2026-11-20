@@ -9,8 +9,12 @@ from fastapi import APIRouter, HTTPException
 from app.schemas import (
     TaskFeatures, PredictionResponse, BatchPredictionRequest,
     BatchPredictionResponse, HealthResponse,
+    SurvivalPredictionRequest, SurvivalPredictionResponse,
+    BatchSurvivalRequest, BatchSurvivalResponse,
+    SurvivalMetricsResponse, SurvivalModelInfoResponse,
 )
 from app.inference import ForgettingPredictor
+from app.survival_service import SurvivalService
 
 router = APIRouter()
 
@@ -55,3 +59,65 @@ def predict_forgetting_batch(request: BatchPredictionRequest):
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=503, detail="Prediction service unavailable.") from e
+
+
+# =====================================================================
+# Survival Analysis Endpoints (Phase 2.3)
+# =====================================================================
+
+@router.post("/survival/predict", response_model=SurvivalPredictionResponse, tags=["survival"])
+@router.post("/api/v1/survival/predict", response_model=SurvivalPredictionResponse, tags=["survival"])
+def predict_survival(request: SurvivalPredictionRequest):
+    try:
+        service = SurvivalService.instance()
+        result = service.predict_task_survival(
+            task=request.task.model_dump(),
+            horizons=request.horizons,
+        )
+        return SurvivalPredictionResponse(**result)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Survival prediction error: {str(e)}") from e
+
+
+@router.post("/survival/batch_predict", response_model=BatchSurvivalResponse, tags=["survival"])
+@router.post("/api/v1/survival/batch_predict", response_model=BatchSurvivalResponse, tags=["survival"])
+def predict_survival_batch(request: BatchSurvivalRequest):
+    try:
+        service = SurvivalService.instance()
+        tasks = [t.model_dump() for t in request.tasks]
+        results = service.predict_batch(tasks=tasks, horizons=request.horizons)
+        return BatchSurvivalResponse(predictions=[SurvivalPredictionResponse(**r) for r in results])
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Survival batch prediction error: {str(e)}") from e
+
+
+@router.get("/survival/metrics", response_model=SurvivalMetricsResponse, tags=["survival"])
+@router.get("/api/v1/survival/metrics", response_model=SurvivalMetricsResponse, tags=["survival"])
+def get_survival_metrics():
+    try:
+        service = SurvivalService.instance()
+        return SurvivalMetricsResponse(**service.get_metrics())
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch survival metrics: {str(e)}") from e
+
+
+@router.get("/survival/model_info", response_model=SurvivalModelInfoResponse, tags=["survival"])
+@router.get("/api/v1/survival/model_info", response_model=SurvivalModelInfoResponse, tags=["survival"])
+def get_survival_model_info():
+    try:
+        service = SurvivalService.instance()
+        return SurvivalModelInfoResponse(**service.get_model_info())
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to fetch survival model info: {str(e)}") from e

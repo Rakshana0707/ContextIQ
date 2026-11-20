@@ -1,18 +1,18 @@
 # Forgetting-Risk Prediction — Performance Report
 
-_Generated 2026-08-20T03:52:09_
+_Generated 2026-11-20T17:05:40_
 
 ## Run Metadata
 
 - **Model version:** `1.1.0`
 - **Dataset version:** `1.0.0`
-- **Dataset fingerprint (SHA-256, 16):** `81d87490610d3a36`
+- **Dataset fingerprint (SHA-256, 16):** `d70109049e6556a3`
 - **Selected model:** `logistic_regression`
-- **Training duration:** 45.7s
+- **Training duration:** 69.9s
 
 ## Which Metric Matters and Why
 
-Model selection is driven primarily by PR-AUC (Average Precision) because for forgetting-risk prediction — a class-imbalanced problem where the positive class (forgotten) is the minority and the cost of missing a forgotten task (false negative) is high for the user. ROC-AUC is a secondary tie-breaker for ranking quality, and F1 confirms thresholded quality. Accuracy is intentionally de-prioritized because a trivial 'never-forget' majority-class classifier achieves ~72.2% accuracy by doing nothing useful.
+Model selection is driven primarily by PR-AUC (Average Precision) because for forgetting-risk prediction — a class-imbalanced problem where the positive class (forgotten) is the minority and the cost of missing a forgotten task (false negative) is high for the user. ROC-AUC is a secondary tie-breaker for ranking quality, and F1 confirms thresholded quality. Accuracy is intentionally de-prioritized because a trivial 'never-forget' majority-class classifier achieves ~72.6% accuracy by doing nothing useful.
 
 Concretely:
 
@@ -25,16 +25,16 @@ Concretely:
 
 ## Class Balance
 
-- Positive (forgotten=1): `27.75%`
-- Negative (forgotten=0): `72.25%`
+- Positive (forgotten=1): `27.41%`
+- Negative (forgotten=0): `72.59%`
 
 ## Chronological Split Summary
 
 | Split | N rows | N users | Date range | Forget rate |
 |-------|--------|---------|------------|-------------|
-| train | 34397 | 100 | 2025-01-01 → 2025-03-07 | 27.74% |
-| val | 7357 | 100 | 2025-03-08 → 2025-03-21 | 27.93% |
-| test | 7875 | 100 | 2025-03-22 → 2025-04-05 | 27.64% |
+| train | 34805 | 100 | 2025-01-01 → 2025-03-07 | 27.45% |
+| val | 7422 | 100 | 2025-03-08 → 2025-03-21 | 26.61% |
+| test | 7943 | 100 | 2025-03-22 → 2025-04-05 | 27.99% |
 
 > Split rule: global chronological by date. 70% train / 15% val / 15% test.
 > A user may appear in all three splits but *always* with behaviour strictly later in val/test than in train (no time leakage).
@@ -43,48 +43,48 @@ Concretely:
 
 | Model | Acc | Precision | Recall | F1 | ROC-AUC | **PR-AUC** | Brier |
 |-------|-----|-----------|--------|----|---------|------------|-------|
-| dummy_most_frequent | 0.724 | 0.000 | 0.000 | 0.000 | 0.500 | 0.276 | 0.276 |
-| **logistic_regression** | 0.572 | 0.355 | 0.674 | 0.465 | 0.658 | **0.445** | 0.227 |
-| random_forest | 0.548 | 0.349 | 0.734 | 0.473 | 0.657 | 0.437 | 0.218 |
-| xgboost | 0.477 | 0.319 | 0.785 | 0.454 | 0.626 | 0.406 | 0.231 |
+| dummy_most_frequent | 0.720 | 0.000 | 0.000 | 0.000 | 0.500 | 0.280 | 0.280 |
+| **logistic_regression** | 0.615 | 0.389 | 0.659 | 0.489 | 0.677 | **0.468** | 0.223 |
+| random_forest | 0.586 | 0.373 | 0.700 | 0.486 | 0.670 | 0.458 | 0.216 |
+| xgboost | 0.549 | 0.348 | 0.700 | 0.465 | 0.644 | 0.436 | 0.220 |
 
 ## Final Selected Model: `logistic_regression`
 
 | Metric | Value |
 |--------|-------|
-| accuracy | 0.5813 |
-| precision | 0.3596 |
-| recall | 0.6587 |
-| f1 | 0.4652 |
-| roc_auc | 0.6574 |
-| pr_auc | 0.4312 |
-| brier_score | 0.1856 |
-| specificity | 0.5518 |
-| threshold (max F1 on val, post-calibration) | 0.235 |
-| calibration applied? | True (isotonic) |
+| accuracy | 0.6150 |
+| precision | 0.3892 |
+| recall | 0.6595 |
+| f1 | 0.4895 |
+| roc_auc | 0.6770 |
+| pr_auc | 0.4676 |
+| brier_score | 0.2234 |
+| specificity | 0.5977 |
+| threshold (max F1 on val, post-calibration) | 0.465 |
+| calibration applied? | False (None) |
 
 ### Confusion Matrix (selected model, test)
 
 | | Predicted Not Forgotten | Predicted Forgotten |
 |---|--------------------------|----------------------|
-| Actual Not Forgotten | **3144** (TN) | 2554 (FP) |
-| Actual Forgotten     | 743 (FN) | **1434** (TP) |
+| Actual Not Forgotten | **3419** (TN) | 2301 (FP) |
+| Actual Forgotten     | 757 (FN) | **1466** (TP) |
 
 ## Time-Series Cross-Validation (walk-forward, 5 folds on train+val)
 
 | Model | Fold | PR-AUC ± std | ROC-AUC ± std | F1 ± std |
 |-------|------|--------------|---------------|----------|
-| logistic_regression | 5 | 0.4430 ± 0.0114 | 0.6588 ± 0.0017 | 0.4757 ± 0.0057 |
-| random_forest | 5 | 0.4327 ± 0.0127 | 0.6494 ± 0.0045 | 0.4675 ± 0.0067 |
-| xgboost | 5 | 0.3997 ± 0.0199 | 0.6215 ± 0.0172 | 0.4560 ± 0.0058 |
+| logistic_regression | 5 | 0.4367 ± 0.0114 | 0.6612 ± 0.0078 | 0.4728 ± 0.0049 |
+| random_forest | 5 | 0.4294 ± 0.0132 | 0.6527 ± 0.0077 | 0.4672 ± 0.0027 |
+| xgboost | 5 | 0.3973 ± 0.0141 | 0.6221 ± 0.0115 | 0.4481 ± 0.0078 |
 
 > Walk-forward time-series CV avoids standard (shuffled) K-fold which is known to leak future information in sequential/behavioral data. Each CV fold is a strictly later date window than its train portion.
 
 ## Probability Calibration
 
 - Methods evaluated: ['isotonic', 'sigmoid']
-- Calibration applied? True
-- Chosen method: isotonic
+- Calibration applied? False
+- Chosen method: None
 
 ## Class Imbalance Handling
 

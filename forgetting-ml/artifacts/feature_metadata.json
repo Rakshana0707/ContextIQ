@@ -1,7 +1,7 @@
 {
   "model_version": "1.1.0",
   "dataset_version": "1.0.0",
-  "dataset_fingerprint": "81d87490610d3a36",
+  "dataset_fingerprint": "d70109049e6556a3",
   "selected_model": "logistic_regression",
   "raw_categorical_features": [
     "task_category",
@@ -60,52 +60,52 @@
     "numeric_impute_medians": {
       "weekday": 3.0,
       "hour": 14.0,
-      "deadline_distance_hours": 17.74,
-      "previous_completion_count": 124.0,
-      "previous_forgetting_count": 43.0,
-      "historical_completion_rate": 0.7506,
-      "historical_forgetting_rate": 0.2494,
-      "task_frequency": 0.1424,
+      "deadline_distance_hours": 17.78,
+      "previous_completion_count": 125.0,
+      "previous_forgetting_count": 44.0,
+      "historical_completion_rate": 0.7471,
+      "historical_forgetting_rate": 0.2529,
+      "task_frequency": 0.1423,
       "tasks_today": 7.0,
       "interruptions_today": 1.0,
       "recent_context_switches": 3.0,
-      "avg_interruption_duration": 7.84,
-      "avg_session_duration": 35.89
+      "avg_interruption_duration": 7.73,
+      "avg_session_duration": 35.64
     },
     "numeric_standard_scaler_means": {
-      "weekday": 3.0014826874436724,
-      "hour": 14.01787946623252,
-      "deadline_distance_hours": 21.016895078059132,
-      "previous_completion_count": 143.38439398784777,
-      "previous_forgetting_count": 54.16042096694479,
-      "historical_completion_rate": 0.7194474082042037,
-      "historical_forgetting_rate": 0.280552580166875,
-      "task_frequency": 0.142536924731808,
-      "tasks_today": 6.994011105619676,
-      "interruptions_today": 1.5540599470884089,
-      "recent_context_switches": 3.650521847835567,
-      "avg_interruption_duration": 9.113357850975376,
-      "avg_session_duration": 36.53337529435707
+      "weekday": 3.0072978020399366,
+      "hour": 13.970119235741992,
+      "deadline_distance_hours": 21.056313173394628,
+      "previous_completion_count": 146.37629650912226,
+      "previous_forgetting_count": 53.98867978738687,
+      "historical_completion_rate": 0.7210556414308289,
+      "historical_forgetting_rate": 0.27894435569602066,
+      "task_frequency": 0.14254620313173394,
+      "tasks_today": 7.019767274816837,
+      "interruptions_today": 1.518143944835512,
+      "recent_context_switches": 3.625944548197098,
+      "avg_interruption_duration": 8.986799597758942,
+      "avg_session_duration": 36.33751817267634
     },
     "numeric_standard_scaler_scales": {
-      "weekday": 1.9573981499944115,
-      "hour": 4.870082962297884,
-      "deadline_distance_hours": 14.260635106391742,
-      "previous_completion_count": 102.72302701523348,
-      "previous_forgetting_count": 44.68386653496139,
-      "historical_completion_rate": 0.144012220551022,
-      "historical_forgetting_rate": 0.1440122121674092,
-      "task_frequency": 0.04853625901791327,
-      "tasks_today": 3.048334673649817,
-      "interruptions_today": 1.7733177378282026,
-      "recent_context_switches": 3.1038180922532908,
-      "avg_interruption_duration": 5.766293711608725,
-      "avg_session_duration": 14.131957529523469
+      "weekday": 1.969995784035808,
+      "hour": 4.883951137153612,
+      "deadline_distance_hours": 14.259905896464428,
+      "previous_completion_count": 106.2298006210955,
+      "previous_forgetting_count": 45.38924584692913,
+      "historical_completion_rate": 0.14783159565398904,
+      "historical_forgetting_rate": 0.1478315994962368,
+      "task_frequency": 0.04911204048829107,
+      "tasks_today": 3.013384880640307,
+      "interruptions_today": 1.7605371979498805,
+      "recent_context_switches": 3.0717941539161235,
+      "avg_interruption_duration": 5.615859177354458,
+      "avg_session_duration": 14.134891264096478
     },
     "categorical_impute_most_frequent": {
-      "task_category": "Academic",
+      "task_category": "Health",
       "priority": "MEDIUM",
-      "location": "Other"
+      "location": "Gym"
     },
     "categorical_onehot_categories": {
       "task_category": [
@@ -148,7 +148,22 @@
     "hour": "hour of day the task was logged",
     "task_category": "task category",
     "priority": "task priority",
-    "location": "task location context"
+    "location": "task location context",
+    "previous_postponement_count": "number of prior task deadline postponements",
+    "category_completion_rate": "historical completion rate for this specific category",
+    "avg_completion_duration_minutes": "average time required to complete tasks",
+    "task_inactivity_hours": "hours elapsed since user's last recorded action",
+    "recent_interruption_frequency": "interruption rate per hour in the last 24h",
+    "avg_resumption_lag_seconds": "average cognitive recovery delay after an interruption",
+    "median_resumption_lag_seconds": "median resumption lag after disruptions",
+    "consecutive_interruption_count": "number of closely spaced consecutive disruptions",
+    "resumption_lag_std_seconds": "variability in recovery time across interruptions",
+    "location_completion_rate": "historical completion rate at this physical location",
+    "context_switch_frequency_24h": "rate of task context switches in the last 24h",
+    "avg_switching_recovery_cost": "cognitive switching recovery penalty score",
+    "task_age_hours": "hours elapsed since task was created",
+    "is_weekend": "whether the task is scheduled on a weekend",
+    "is_peak_focus_hours": "whether the task coincides with peak cognitive focus hours"
   },
-  "generated_at_unix": 1787178123.3685164
+  "generated_at_unix": 1795174534.847567
 }

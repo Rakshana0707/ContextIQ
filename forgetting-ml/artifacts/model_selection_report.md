@@ -1,67 +1,67 @@
 # Model Selection & Comparison Report
 
-_Generated 2026-08-20T03:52:09_
+_Generated 2026-11-20T17:05:40_
 
 ## Model Rankings (Test Set)
 
 | Rank | Model | PR-AUC | ROC-AUC | F1 | Accuracy | Brier |
 |------|-------|--------|---------|----|----------|-------|
-| 1 | logistic_regression | 0.4451 | 0.6583 | 0.4651 | 0.5716 | 0.2273 |
-| 2 | random_forest | 0.4369 | 0.6574 | 0.4728 | 0.5478 | 0.2179 |
-| 3 | xgboost | 0.4055 | 0.6265 | 0.4536 | 0.4772 | 0.2312 |
-| 4 | dummy_most_frequent | 0.2764 | 0.5000 | 0.0000 | 0.7236 | 0.2764 |
+| 1 | logistic_regression | 0.4676 | 0.6770 | 0.4895 | 0.6150 | 0.2234 |
+| 2 | random_forest | 0.4580 | 0.6703 | 0.4865 | 0.5862 | 0.2161 |
+| 3 | xgboost | 0.4357 | 0.6443 | 0.4648 | 0.5489 | 0.2198 |
+| 4 | dummy_most_frequent | 0.2799 | 0.5000 | 0.0000 | 0.7201 | 0.2799 |
 
 ## Pairwise Differences
 
 ### dummy_most_frequent_vs_logistic_regression
-- Difference: -0.1686
-- Relative improvement: -37.89%
+- Difference: -0.1877
+- Relative improvement: -40.14%
 - Better model: logistic_regression
 
 ### dummy_most_frequent_vs_random_forest
-- Difference: -0.1604
-- Relative improvement: -36.72%
+- Difference: -0.1781
+- Relative improvement: -38.89%
 - Better model: random_forest
 
 ### dummy_most_frequent_vs_xgboost
-- Difference: -0.1291
-- Relative improvement: -31.83%
+- Difference: -0.1559
+- Relative improvement: -35.77%
 - Better model: xgboost
 
 ### logistic_regression_vs_random_forest
-- Difference: 0.0082
-- Relative improvement: 1.88%
+- Difference: 0.0096
+- Relative improvement: 2.10%
 - Better model: logistic_regression
 
 ### logistic_regression_vs_xgboost
-- Difference: 0.0395
-- Relative improvement: 9.75%
+- Difference: 0.0318
+- Relative improvement: 7.31%
 - Better model: logistic_regression
 
 ### random_forest_vs_xgboost
-- Difference: 0.0313
-- Relative improvement: 7.73%
+- Difference: 0.0222
+- Relative improvement: 5.10%
 - Better model: random_forest
 
 ## Cross-Validation Stability Analysis
 
 ### logistic_regression
-- PR-AUC: 0.4430 ± 0.0114 (n=5)
-- Range: [0.4276, 0.4586]
-- Coefficient of variation: 2.57%
-- ROC-AUC: 0.6588 ± 0.0017
+- PR-AUC: 0.4367 ± 0.0114 (n=5)
+- Range: [0.4177, 0.4524]
+- Coefficient of variation: 2.62%
+- ROC-AUC: 0.6612 ± 0.0078
 
 ### random_forest
-- PR-AUC: 0.4327 ± 0.0127 (n=5)
-- Range: [0.4172, 0.4511]
-- Coefficient of variation: 2.94%
-- ROC-AUC: 0.6494 ± 0.0045
+- PR-AUC: 0.4294 ± 0.0132 (n=5)
+- Range: [0.4078, 0.4485]
+- Coefficient of variation: 3.08%
+- ROC-AUC: 0.6527 ± 0.0077
 
 ### xgboost
-- PR-AUC: 0.3997 ± 0.0199 (n=5)
-- Range: [0.3848, 0.4376]
-- Coefficient of variation: 4.99%
-- ROC-AUC: 0.6215 ± 0.0172
+- PR-AUC: 0.3973 ± 0.0141 (n=5)
+- Range: [0.3796, 0.4163]
+- Coefficient of variation: 3.55%
+- ROC-AUC: 0.6221 ± 0.0115
 
 ## Selection Rationale
 
@@ -78,14 +78,14 @@ Selection criteria (in order of priority):
 
 ### logistic_regression
 - **Strengths:**
-  - Best PR-AUC (0.4451)
-  - Best ROC-AUC (0.6583)
+  - Best PR-AUC (0.4676)
+  - Best ROC-AUC (0.6770)
+  - Best F1 (0.4895)
 - **Weaknesses:**
 
 ### random_forest
 - **Strengths:**
-  - Best F1 (0.4728)
-  - Best calibration (lowest Brier: 0.2179)
+  - Best calibration (lowest Brier: 0.2161)
 - **Weaknesses:**
 
 ### xgboost
