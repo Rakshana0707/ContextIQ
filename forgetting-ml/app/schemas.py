@@ -87,10 +87,16 @@ class TaskFeatures(BaseModel):
 
 class PredictionResponse(BaseModel):
     task: Optional[str] = None
-    prediction_probability: float
-    risk_level: str
+    prediction_probability: float  # Calibrated probability (backward-compatible)
+    raw_probability: Optional[float] = None
+    calibrated_probability: Optional[float] = None
+    risk_level: str  # Backward-compatible 3-tier (LOW, MEDIUM, HIGH)
+    risk_category: Optional[str] = None  # Phase 2.5 4-tier (LOW, MEDIUM, HIGH, CRITICAL)
+    classification_threshold: Optional[float] = None
+    calibration_version: str = "2.5.0"
     model_version: str
     top_features: List[str]
+    action_recommendation: Optional[str] = None
 
     model_config = {'protected_namespaces': ()}
 

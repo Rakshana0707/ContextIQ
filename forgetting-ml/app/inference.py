@@ -73,6 +73,25 @@ class ForgettingPredictor:
             background_data=self.background_sample,
         )
 
+        # Phase 2.5: Calibrator and Threshold Manager
+        self.calibrator_bundle = None
+        self.cal_pipeline = None
+        self.risk_thresholds = None
+        cal_path = ROOT / "artifacts" / "calibrator_bundle.joblib"
+        if cal_path.exists():
+            try:
+                self.calibrator_bundle = joblib.load(cal_path)
+                self.cal_pipeline = self.calibrator_bundle.get("pipeline")
+                thresh_dict = self.calibrator_bundle.get("population_thresholds", {})
+                from ml.calibration.thresholds import RiskThresholds
+                self.risk_thresholds = RiskThresholds(
+                    tau_low=thresh_dict.get("tau_low", 0.25),
+                    tau_medium=thresh_dict.get("tau_medium", 0.45),
+                    tau_high=thresh_dict.get("tau_high", 0.70),
+                )
+            except Exception:
+                pass
+
     @classmethod
     def instance(cls) -> "ForgettingPredictor":
         if cls._instance is None:
@@ -113,14 +132,39 @@ class ForgettingPredictor:
         results = []
         for i, task in enumerate(tasks):
             row = X_transformed[i:i + 1]
-            prob = float(probabilities[i])
+            raw_prob = float(probabilities[i])
+            if self.cal_pipeline is not None:
+                cal_prob = float(self.cal_pipeline.calibrate(raw_prob))
+            else:
+                cal_prob = raw_prob
+
+            # Legacy 3-tier level for strict backward compatibility
+            risk_level_str = risk_level_from_probability(cal_prob)
+
+            if self.risk_thresholds is not None:
+                from ml.calibration.policy import get_risk_policy
+                risk_cat = self.risk_thresholds.classify_risk(cal_prob)
+                risk_category_str = risk_cat.value
+                action_rec = get_risk_policy(risk_cat)["action_recommendation"]
+                threshold = self.risk_thresholds.tau_medium
+            else:
+                risk_category_str = risk_level_str
+                action_rec = None
+                threshold = self.threshold
+
             reasons = self.explainer.explain(row, top_k=top_k)
             results.append({
                 "task": task.get("task_id"),
-                "prediction_probability": round(prob, 4),
-                "risk_level": risk_level_from_probability(prob),
+                "prediction_probability": round(cal_prob, 4),
+                "raw_probability": round(raw_prob, 4),
+                "calibrated_probability": round(cal_prob, 4),
+                "risk_level": risk_level_str,
+                "risk_category": risk_category_str,
+                "classification_threshold": threshold,
+                "calibration_version": "2.5.0",
                 "model_version": self.model_version,
                 "top_features": reasons,
+                "action_recommendation": action_rec,
             })
         return results
 
