@@ -92,6 +92,9 @@ class ForgettingPredictor:
             except Exception:
                 pass
 
+        from ml.evaluation.cold_start import ColdStartStrategy
+        self.cold_start_strategy = ColdStartStrategy()
+
     @classmethod
     def instance(cls) -> "ForgettingPredictor":
         if cls._instance is None:
@@ -153,6 +156,13 @@ class ForgettingPredictor:
                 threshold = self.threshold
 
             reasons = self.explainer.explain(row, top_k=top_k)
+            cs_assessment = self.cold_start_strategy.assess_user(
+                previous_completions=task.get("previous_completion_count", 0),
+                previous_forgettings=task.get("previous_forgetting_count", 0),
+                raw_historical_rate=task.get("historical_forgetting_rate"),
+            )
+            ci_bounds = self.cold_start_strategy.calculate_prediction_interval(cal_prob, cs_assessment)
+
             results.append({
                 "task": task.get("task_id"),
                 "prediction_probability": round(cal_prob, 4),
@@ -165,6 +175,9 @@ class ForgettingPredictor:
                 "model_version": self.model_version,
                 "top_features": reasons,
                 "action_recommendation": action_rec,
+                "is_cold_start": cs_assessment.is_cold_start,
+                "cold_start_tier": cs_assessment.cold_start_tier.value,
+                "confidence_interval": [ci_bounds[0], ci_bounds[1]],
             })
         return results
 

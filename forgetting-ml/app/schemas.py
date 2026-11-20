@@ -97,6 +97,9 @@ class PredictionResponse(BaseModel):
     model_version: str
     top_features: List[str]
     action_recommendation: Optional[str] = None
+    is_cold_start: bool = False
+    cold_start_tier: Optional[str] = None
+    confidence_interval: Optional[List[float]] = None
 
     model_config = {'protected_namespaces': ()}
 
