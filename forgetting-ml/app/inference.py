@@ -6,6 +6,7 @@ prediction functions. No hardcoded predictions - every call routes through
 the trained model artifact.
 """
 
+import json
 import sys
 from pathlib import Path
 from typing import List, Dict, Any
@@ -183,3 +184,111 @@ class ForgettingPredictor:
 
     def predict_single(self, task: Dict[str, Any], top_k: int = 3) -> Dict[str, Any]:
         return self.predict_batch([task], top_k=top_k)[0]
+
+    def explain_single(self, task: Dict[str, Any], top_k: int = 5) -> Dict[str, Any]:
+        """Generates a detailed local explanation with attributions and grounded NLG."""
+        df = self._to_dataframe([task])
+        X_transformed = self.preprocessor.transform(df)
+        if hasattr(X_transformed, "toarray"):
+            X_transformed = X_transformed.toarray()
+
+        probabilities = np.asarray(self.model.predict_proba(X_transformed))[:, 1]
+        raw_prob = float(probabilities[0])
+
+        if self.cal_pipeline is not None:
+            cal_prob = float(self.cal_pipeline.calibrate(raw_prob))
+        else:
+            cal_prob = raw_prob
+
+        if self.risk_thresholds is not None:
+            risk_cat = self.risk_thresholds.classify_risk(cal_prob).value
+        else:
+            risk_cat = risk_level_from_probability(cal_prob)
+
+        return self.explainer.explain_local(
+            raw_task=task,
+            X_transformed_row=X_transformed[0:1],
+            calibrated_prob=cal_prob,
+            raw_prob=raw_prob,
+            risk_category=risk_cat,
+            top_k=top_k,
+        )
+
+    def explain_batch(self, tasks: List[Dict[str, Any]], top_k: int = 5) -> List[Dict[str, Any]]:
+        """Generates vectorized batch explanations."""
+        if not tasks:
+            return []
+
+        df = self._to_dataframe(tasks)
+        X_transformed = self.preprocessor.transform(df)
+        if hasattr(X_transformed, "toarray"):
+            X_transformed = X_transformed.toarray()
+
+        probabilities = np.asarray(self.model.predict_proba(X_transformed))[:, 1]
+
+        results = []
+        for i, task in enumerate(tasks):
+            raw_p = float(probabilities[i])
+            if self.cal_pipeline is not None:
+                cal_p = float(self.cal_pipeline.calibrate(raw_p))
+            else:
+                cal_p = raw_p
+
+            if self.risk_thresholds is not None:
+                risk_cat = self.risk_thresholds.classify_risk(cal_p).value
+            else:
+                risk_cat = risk_level_from_probability(cal_p)
+
+            res = self.explainer.explain_local(
+                raw_task=task,
+                X_transformed_row=X_transformed[i:i + 1],
+                calibrated_prob=cal_p,
+                raw_prob=raw_p,
+                risk_category=risk_cat,
+                top_k=top_k,
+            )
+            results.append(res)
+        return results
+
+    def get_global_explanation(self) -> Dict[str, Any]:
+        """Fetches or dynamically computes global feature importances and interactions."""
+        global_path = ROOT / "artifacts" / "global_explanations.json"
+        if global_path.exists():
+            try:
+                with open(global_path, "r", encoding="utf-8") as f:
+                    return json.load(f)
+            except Exception:
+                pass
+
+        # Dynamically compute from background sample if artifact missing
+        from ml.explainability.global_explainer import GlobalExplainer
+        bg = self.background_sample
+        if bg is None:
+            return {
+                "model_name": self.model_name,
+                "model_version": self.model_version,
+                "explanation_version": "2.7.0",
+                "global_importances": [],
+                "top_interactions": [],
+            }
+
+        if hasattr(bg, "toarray"):
+            bg = bg.toarray()
+        shap_vals = self.explainer._explainer.shap_values(bg) if self.explainer._explainer else None
+        if shap_vals is not None:
+            return GlobalExplainer.export_global_report_and_plots(
+                shap_values=np.asarray(shap_vals),
+                X_sample=bg,
+                feature_names=self.feature_names_transformed,
+                model_name=self.model_name,
+                model_version=self.model_version,
+                artifacts_dir=ROOT / "artifacts",
+            )
+        return {
+            "model_name": self.model_name,
+            "model_version": self.model_version,
+            "explanation_version": "2.7.0",
+            "global_importances": [],
+            "top_interactions": [],
+        }
+

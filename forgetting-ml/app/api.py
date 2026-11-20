@@ -12,6 +12,8 @@ from app.schemas import (
     SurvivalPredictionRequest, SurvivalPredictionResponse,
     BatchSurvivalRequest, BatchSurvivalResponse,
     SurvivalMetricsResponse, SurvivalModelInfoResponse,
+    ExplanationResponse, BatchExplanationRequest, BatchExplanationResponse,
+    GlobalExplanationResponse,
 )
 from app.inference import ForgettingPredictor
 from app.survival_service import SurvivalService
@@ -121,3 +123,51 @@ def get_survival_model_info():
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to fetch survival model info: {str(e)}") from e
+
+
+# =====================================================================
+# Explainability Endpoints (Phase 2.7)
+# =====================================================================
+
+@router.post("/explain", response_model=ExplanationResponse, tags=["explainability"])
+@router.post("/api/v1/predictions/explain", response_model=ExplanationResponse, tags=["explainability"])
+def explain_prediction(task: TaskFeatures, top_k: int = 5):
+    try:
+        predictor = ForgettingPredictor.instance()
+        result = predictor.explain_single(task.model_dump(), top_k=top_k)
+        return ExplanationResponse(**result)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Explanation generation error: {str(e)}") from e
+
+
+@router.post("/batch_explain", response_model=BatchExplanationResponse, tags=["explainability"])
+@router.post("/api/v1/predictions/batch_explain", response_model=BatchExplanationResponse, tags=["explainability"])
+def explain_prediction_batch(request: BatchExplanationRequest):
+    try:
+        predictor = ForgettingPredictor.instance()
+        tasks = [t.model_dump() for t in request.tasks]
+        results = predictor.explain_batch(tasks, top_k=request.top_k or 5)
+        return BatchExplanationResponse(explanations=[ExplanationResponse(**r) for r in results])
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except ValueError as e:
+        raise HTTPException(status_code=422, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Batch explanation error: {str(e)}") from e
+
+
+@router.get("/explain/global", response_model=GlobalExplanationResponse, tags=["explainability"])
+@router.get("/api/v1/predictions/explain/global", response_model=GlobalExplanationResponse, tags=["explainability"])
+def get_global_explanation():
+    try:
+        predictor = ForgettingPredictor.instance()
+        return GlobalExplanationResponse(**predictor.get_global_explanation())
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Global explanation fetch error: {str(e)}") from e
+

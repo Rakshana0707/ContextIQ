@@ -178,3 +178,75 @@ class SurvivalModelInfoResponse(BaseModel):
     reliable_range_hours: float
 
     model_config = {'protected_namespaces': ()}
+
+
+# =====================================================================
+# Explainability Schemas (Phase 2.7)
+# =====================================================================
+
+class FeatureAttribution(BaseModel):
+    feature: str
+    raw_feature: str
+    display_name: str
+    actual_value: Optional[Any] = None
+    actual_value_formatted: Optional[str] = None
+    shap_value: float
+    direction: str
+    magnitude: float
+    description: str
+
+
+class ExplanationResponse(BaseModel):
+    task_id: Optional[str] = None
+    calibrated_probability: float
+    raw_probability: float
+    base_value: float
+    risk_category: str
+    attributions: List[FeatureAttribution]
+    all_attributions_count: int
+    top_positive_factors: List[FeatureAttribution]
+    top_negative_factors: List[FeatureAttribution]
+    natural_language_explanation: str
+    model_name: str
+    model_version: str
+    explanation_version: str = "2.7.0"
+    is_cached: bool = False
+
+    model_config = {'protected_namespaces': ()}
+
+
+class BatchExplanationRequest(BaseModel):
+    tasks: List[TaskFeatures]
+    top_k: Optional[int] = 5
+
+
+class BatchExplanationResponse(BaseModel):
+    explanations: List[ExplanationResponse]
+
+
+class GlobalFeatureImportanceItem(BaseModel):
+    rank: int
+    feature: str
+    raw_feature: str
+    display_name: str
+    mean_abs_shap: float
+    relative_importance_pct: float
+    description: str
+
+
+class GlobalInteractionItem(BaseModel):
+    feature_a: str
+    feature_b: str
+    display_pair: str
+    co_attribution_strength: float
+
+
+class GlobalExplanationResponse(BaseModel):
+    model_name: str
+    model_version: str
+    explanation_version: str = "2.7.0"
+    global_importances: List[GlobalFeatureImportanceItem]
+    top_interactions: List[GlobalInteractionItem]
+
+    model_config = {'protected_namespaces': ()}
+

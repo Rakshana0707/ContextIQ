@@ -1,0 +1,219 @@
+{
+  "model_name": "logistic_regression",
+  "model_version": "1.1.0",
+  "explanation_version": "2.7.0",
+  "global_importances": [
+    {
+      "rank": 1,
+      "feature": "num__historical_forgetting_rate",
+      "raw_feature": "historical_forgetting_rate",
+      "display_name": "Historical Forgetting Rate",
+      "mean_abs_shap": 0.1683,
+      "relative_importance_pct": 13.96,
+      "description": "historical forgetting rate for this user"
+    },
+    {
+      "rank": 2,
+      "feature": "num__historical_completion_rate",
+      "raw_feature": "historical_completion_rate",
+      "display_name": "Historical Completion Rate",
+      "mean_abs_shap": 0.1683,
+      "relative_importance_pct": 13.96,
+      "description": "historical completion rate for this user"
+    },
+    {
+      "rank": 3,
+      "feature": "num__previous_forgetting_count",
+      "raw_feature": "previous_forgetting_count",
+      "display_name": "Past Forgetting Incidents",
+      "mean_abs_shap": 0.1252,
+      "relative_importance_pct": 10.39,
+      "description": "number of previously forgotten tasks"
+    },
+    {
+      "rank": 4,
+      "feature": "num__previous_completion_count",
+      "raw_feature": "previous_completion_count",
+      "display_name": "Past Completed Tasks",
+      "mean_abs_shap": 0.1143,
+      "relative_importance_pct": 9.49,
+      "description": "number of previously completed tasks"
+    },
+    {
+      "rank": 5,
+      "feature": "num__deadline_distance_hours",
+      "raw_feature": "deadline_distance_hours",
+      "display_name": "Deadline Proximity",
+      "mean_abs_shap": 0.1015,
+      "relative_importance_pct": 8.42,
+      "description": "time remaining until the task deadline"
+    },
+    {
+      "rank": 6,
+      "feature": "cat__priority_HIGH",
+      "raw_feature": "priority",
+      "display_name": "Task Priority: HIGH",
+      "mean_abs_shap": 0.0564,
+      "relative_importance_pct": 4.68,
+      "description": "task priority"
+    },
+    {
+      "rank": 7,
+      "feature": "cat__priority_LOW",
+      "raw_feature": "priority",
+      "display_name": "Task Priority: LOW",
+      "mean_abs_shap": 0.0548,
+      "relative_importance_pct": 4.55,
+      "description": "task priority"
+    },
+    {
+      "rank": 8,
+      "feature": "num__interruptions_today",
+      "raw_feature": "interruptions_today",
+      "display_name": "Daily Interruption Count",
+      "mean_abs_shap": 0.0367,
+      "relative_importance_pct": 3.05,
+      "description": "number of interruptions experienced today"
+    },
+    {
+      "rank": 9,
+      "feature": "cat__task_category_Household",
+      "raw_feature": "task_category",
+      "display_name": "Task Category: Household",
+      "mean_abs_shap": 0.0366,
+      "relative_importance_pct": 3.03,
+      "description": "task category"
+    },
+    {
+      "rank": 10,
+      "feature": "cat__task_category_Finance",
+      "raw_feature": "task_category",
+      "display_name": "Task Category: Finance",
+      "mean_abs_shap": 0.0332,
+      "relative_importance_pct": 2.76,
+      "description": "task category"
+    },
+    {
+      "rank": 11,
+      "feature": "num__avg_interruption_duration",
+      "raw_feature": "avg_interruption_duration",
+      "display_name": "Avg Interruption Duration",
+      "mean_abs_shap": 0.0322,
+      "relative_importance_pct": 2.67,
+      "description": "average interruption duration"
+    },
+    {
+      "rank": 12,
+      "feature": "cat__task_category_Personal",
+      "raw_feature": "task_category",
+      "display_name": "Task Category: Personal",
+      "mean_abs_shap": 0.0315,
+      "relative_importance_pct": 2.61,
+      "description": "task category"
+    },
+    {
+      "rank": 13,
+      "feature": "cat__task_category_Work",
+      "raw_feature": "task_category",
+      "display_name": "Task Category: Work",
+      "mean_abs_shap": 0.028,
+      "relative_importance_pct": 2.32,
+      "description": "task category"
+    },
+    {
+      "rank": 14,
+      "feature": "cat__location_Office",
+      "raw_feature": "location",
+      "display_name": "Location Context: Office",
+      "mean_abs_shap": 0.0278,
+      "relative_importance_pct": 2.31,
+      "description": "task location context"
+    },
+    {
+      "rank": 15,
+      "feature": "cat__location_Commute",
+      "raw_feature": "location",
+      "display_name": "Location Context: Commute",
+      "mean_abs_shap": 0.0223,
+      "relative_importance_pct": 1.85,
+      "description": "task location context"
+    },
+    {
+      "rank": 16,
+      "feature": "num__task_frequency",
+      "raw_feature": "task_frequency",
+      "display_name": "Task Recurrence Frequency",
+      "mean_abs_shap": 0.0218,
+      "relative_importance_pct": 1.81,
+      "description": "how often this task category recurs for this user"
+    },
+    {
+      "rank": 17,
+      "feature": "num__weekday",
+      "raw_feature": "weekday",
+      "display_name": "Day of Week",
+      "mean_abs_shap": 0.0218,
+      "relative_importance_pct": 1.81,
+      "description": "day of the week"
+    },
+    {
+      "rank": 18,
+      "feature": "num__recent_context_switches",
+      "raw_feature": "recent_context_switches",
+      "display_name": "Recent Context Switches",
+      "mean_abs_shap": 0.0181,
+      "relative_importance_pct": 1.5,
+      "description": "recent context switches"
+    },
+    {
+      "rank": 19,
+      "feature": "cat__task_category_Social",
+      "raw_feature": "task_category",
+      "display_name": "Task Category: Social",
+      "mean_abs_shap": 0.018,
+      "relative_importance_pct": 1.49,
+      "description": "task category"
+    },
+    {
+      "rank": 20,
+      "feature": "cat__task_category_Academic",
+      "raw_feature": "task_category",
+      "display_name": "Task Category: Academic",
+      "mean_abs_shap": 0.0169,
+      "relative_importance_pct": 1.41,
+      "description": "task category"
+    }
+  ],
+  "top_interactions": [
+    {
+      "feature_a": "num__historical_completion_rate",
+      "feature_b": "num__historical_forgetting_rate",
+      "display_pair": "Historical Completion Rate \u00d7 Historical Forgetting Rate",
+      "co_attribution_strength": 0.04
+    },
+    {
+      "feature_a": "num__previous_forgetting_count",
+      "feature_b": "num__historical_forgetting_rate",
+      "display_pair": "Past Forgetting Incidents \u00d7 Historical Forgetting Rate",
+      "co_attribution_strength": 0.0128
+    },
+    {
+      "feature_a": "num__previous_forgetting_count",
+      "feature_b": "num__historical_completion_rate",
+      "display_pair": "Past Forgetting Incidents \u00d7 Historical Completion Rate",
+      "co_attribution_strength": 0.0128
+    },
+    {
+      "feature_a": "num__previous_completion_count",
+      "feature_b": "num__previous_forgetting_count",
+      "display_pair": "Past Completed Tasks \u00d7 Past Forgetting Incidents",
+      "co_attribution_strength": 0.0125
+    },
+    {
+      "feature_a": "num__previous_completion_count",
+      "feature_b": "num__historical_forgetting_rate",
+      "display_pair": "Past Completed Tasks \u00d7 Historical Forgetting Rate",
+      "co_attribution_strength": 0.008
+    }
+  ]
+}

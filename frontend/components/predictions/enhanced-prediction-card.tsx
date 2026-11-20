@@ -3,9 +3,10 @@
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { AlertTriangle, CheckCircle, Clock, Info } from "lucide-react";
+import { AlertTriangle, CheckCircle, Clock, Info, BrainCircuit } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ForgettingPrediction } from "@/types";
+import { SHAPWaterfall } from "@/components/predictions/shap-waterfall";
 
 interface EnhancedPredictionCardProps {
   prediction: ForgettingPrediction;
@@ -27,8 +28,10 @@ export function EnhancedPredictionCard({ prediction }: EnhancedPredictionCardPro
         <div className="flex items-start justify-between">
           <div className="flex-1">
             <CardTitle className="text-base mb-1">{prediction.taskTitle}</CardTitle>
-            <CardDescription className="text-xs">
-              Model v{prediction.modelVersion}
+            <CardDescription className="text-xs flex items-center gap-2">
+              <span>Model v{prediction.modelVersion}</span>
+              <span>•</span>
+              <span>Exp v{prediction.explanationVersion || "2.7.0"}</span>
             </CardDescription>
           </div>
           <Badge
@@ -54,6 +57,14 @@ export function EnhancedPredictionCard({ prediction }: EnhancedPredictionCardPro
           />
         </div>
 
+        {/* Natural Language Explanation / Intelligence Layer Reasoning */}
+        {prediction.naturalLanguageExplanation && (
+          <div className="p-2.5 rounded-lg bg-blue-50/70 border border-blue-100 flex items-start gap-2 text-xs text-blue-900">
+            <BrainCircuit className="h-4 w-4 text-blue-600 mt-0.5 shrink-0" />
+            <p className="leading-relaxed">{prediction.naturalLanguageExplanation}</p>
+          </div>
+        )}
+
         {/* Risk Category */}
         <div className={cn("flex items-center gap-2 p-3 rounded-lg", config.bg)}>
           <RiskIcon className={cn("h-5 w-5", config.color)} />
@@ -67,29 +78,20 @@ export function EnhancedPredictionCard({ prediction }: EnhancedPredictionCardPro
           </div>
         </div>
 
-        {/* SHAP/Explanation Factors */}
-        {prediction.reasons.length > 0 && (
-          <div>
-            <div className="flex items-center gap-2 mb-2">
-              <Info className="h-4 w-4 text-muted-foreground" />
-              <span className="text-sm font-medium">Key Factors</span>
-            </div>
-            <div className="space-y-2">
-              {prediction.reasons.map((reason) => (
-                <div
-                  key={reason.label}
-                  className="text-xs p-2 bg-gray-50 rounded border-l-2 border-gray-300"
-                >
-                  <span className="font-medium">{reason.label}</span><span className="ml-1 text-muted-foreground">{reason.detail}</span>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* SHAP Waterfall / Feature Contributions */}
+        {prediction.reasons && prediction.reasons.length > 0 && (
+          <SHAPWaterfall
+            reasons={prediction.reasons}
+            baseValue={prediction.baseValue}
+          />
         )}
 
         {/* Confidence/Sample Information */}
         <div className="border-t pt-3 text-xs text-muted-foreground">
-          <div className="flex justify-between"><span>Generated</span><span className="font-medium">{new Date(prediction.generatedAt).toLocaleDateString()}</span></div>
+          <div className="flex justify-between">
+            <span>Generated</span>
+            <span className="font-medium">{new Date(prediction.generatedAt).toLocaleDateString()}</span>
+          </div>
         </div>
       </CardContent>
     </Card>

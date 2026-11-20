@@ -158,12 +158,21 @@ export interface ForgettingPrediction {
   reasons: PredictionReason[];
   generatedAt: ISODateTime;
   modelVersion: string;
+  explanationVersion?: string;
+  naturalLanguageExplanation?: string;
+  baseValue?: number;
+  confidenceInterval?: [number, number];
 }
 
 export interface PredictionReason {
   label: string; // e.g. "Previous forgetting frequency"
   detail: string;
   weight: number; // 0-1 contribution to score
+  feature?: string;
+  impact?: number; // signed SHAP contribution
+  direction?: "increasing" | "decreasing";
+  actualValue?: string;
+  description?: string;
 }
 
 // ---------------------------------------------------------------------------
