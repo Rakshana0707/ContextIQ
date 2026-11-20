@@ -250,3 +250,85 @@ class GlobalExplanationResponse(BaseModel):
 
     model_config = {'protected_namespaces': ()}
 
+
+# =====================================================================
+# Model Monitoring & Retraining Schemas (Phase 2.8)
+# =====================================================================
+
+class FeatureDriftItem(BaseModel):
+    feature: str
+    feature_type: str
+    psi: Optional[float] = None
+    ks_statistic: Optional[float] = None
+    ks_p_value: Optional[float] = None
+    js_divergence: Optional[float] = None
+    drift_level: str  # "STABLE", "MODERATE", "DRIFT"
+    missing_delta: Optional[float] = None
+
+
+class DriftReportResponse(BaseModel):
+    timestamp: str
+    model_name: str
+    model_version: str
+    overall_status: str  # "STABLE", "MODERATE_WARNING", "DRIFT_DETECTED"
+    feature_drift_status: str
+    drifted_features_count: int
+    moderate_features_count: int
+    total_features_evaluated: int
+    feature_details: Dict[str, Any]
+    prediction_drift: Optional[Dict[str, Any]] = None
+    concept_drift: Optional[Dict[str, Any]] = None
+    retraining_trigger_recommendation: Optional[Dict[str, Any]] = None
+
+    model_config = {'protected_namespaces': ()}
+
+
+class RetrainingTriggerRequest(BaseModel):
+    candidate_version: Optional[str] = "1.2.0"
+    candidate_model_type: Optional[str] = "logistic_regression"
+
+
+class RetrainingStatusResponse(BaseModel):
+    status: str  # "IDLE", "PENDING_APPROVAL", "DEPLOYED", "REJECTED"
+    candidate_version: Optional[str] = None
+    current_champion_version: Optional[str] = None
+    candidate_model_type: Optional[str] = None
+    created_at: Optional[str] = None
+    champion_metrics: Optional[Dict[str, float]] = None
+    challenger_metrics: Optional[Dict[str, float]] = None
+    delta_pr_auc: Optional[float] = None
+    meets_promotion_criteria: Optional[bool] = None
+    recommendation: Optional[str] = None
+    reason: Optional[str] = None
+    approved_by: Optional[str] = None
+    deployed_at: Optional[str] = None
+
+    model_config = {'protected_namespaces': ()}
+
+
+class RetrainingApprovalRequest(BaseModel):
+    approved_by: Optional[str] = "MLOps Admin"
+    rationale: Optional[str] = "Approved challenger after temporal validation"
+
+
+class RollbackRequest(BaseModel):
+    target_version: Optional[str] = None
+    approved_by: Optional[str] = "MLOps Admin"
+    reason: Optional[str] = "Manual rollback initiated"
+
+
+class RollbackResponse(BaseModel):
+    status: str
+    previous_version: str
+    restored_version: str
+    restored_from: str
+    event: Dict[str, Any]
+
+    model_config = {'protected_namespaces': ()}
+
+
+class DeploymentHistoryResponse(BaseModel):
+    total_events: int
+    history: List[Dict[str, Any]]
+
+

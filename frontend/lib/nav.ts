@@ -6,6 +6,7 @@ import {
   Lightbulb,
   Sparkles,
   BrainCircuit,
+  Activity,
 } from "lucide-react";
 
 export interface NavItem {
@@ -51,5 +52,11 @@ export const navItems: NavItem[] = [
     label: "Behaviour Insights",
     icon: Lightbulb,
     description: "Patterns in how you work",
+  },
+  {
+    href: "/monitoring",
+    label: "ML Monitoring",
+    icon: Activity,
+    description: "Drift detection & continual learning",
   },
 ];

@@ -130,6 +130,12 @@ class PlattScalingCalibrator:
         z = logit(p_clipped).reshape(-1, 1)
         return self.lr.predict_proba(z)[:, 1]
 
+    def calibrate(self, y_prob: np.ndarray) -> np.ndarray:
+        return self.predict_proba(y_prob)
+
+    def transform(self, y_prob: np.ndarray) -> np.ndarray:
+        return self.predict_proba(y_prob)
+
 
 class IsotonicCalibrator:
     """Isotonic Regression: Fits a non-parametric isotonic step function."""
@@ -149,6 +155,12 @@ class IsotonicCalibrator:
             raise ValueError("IsotonicCalibrator is not fitted.")
         p_clipped = clip_probabilities(y_prob)
         return clip_probabilities(self.iso.predict(p_clipped))
+
+    def calibrate(self, y_prob: np.ndarray) -> np.ndarray:
+        return self.predict_proba(y_prob)
+
+    def transform(self, y_prob: np.ndarray) -> np.ndarray:
+        return self.predict_proba(y_prob)
 
 
 class TemperatureScalingCalibrator:
@@ -177,6 +189,12 @@ class TemperatureScalingCalibrator:
         p_clipped = clip_probabilities(y_prob)
         z = logit(p_clipped)
         return clip_probabilities(expit(z / self.temperature))
+
+    def calibrate(self, y_prob: np.ndarray) -> np.ndarray:
+        return self.predict_proba(y_prob)
+
+    def transform(self, y_prob: np.ndarray) -> np.ndarray:
+        return self.predict_proba(y_prob)
 
 
 class ProbabilityCalibrationPipeline:

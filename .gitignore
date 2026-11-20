@@ -29,6 +29,9 @@ frontend/.env.local
 # ML artifacts (large binary files)
 forgetting-ml/artifacts/*.joblib
 forgetting-ml/artifacts/benchmark_models/
+forgetting-ml/artifacts/model_archive/
+forgetting-ml/artifacts/production_buffer.jsonl
+forgetting-ml/artifacts/retraining_status.json
 forgetting-ml/artifacts/*.pkl
 forgetting-ml/artifacts/*.png
 forgetting-ml/artifacts/metrics.json
