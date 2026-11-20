@@ -1,0 +1,36 @@
+{
+  "total_samples": 50170,
+  "total_features": 28,
+  "constant_features": [],
+  "high_correlations": [
+    {
+      "feature_1": "historical_completion_rate",
+      "feature_2": "historical_forgetting_rate",
+      "correlation": 0.962
+    },
+    {
+      "feature_1": "avg_resumption_lag_seconds",
+      "feature_2": "median_resumption_lag_seconds",
+      "correlation": 0.914
+    }
+  ],
+  "outliers_detected": {
+    "avg_resumption_lag_seconds": {
+      "count": 642,
+      "percentage": 1.28,
+      "upper_threshold": 1105.0
+    },
+    "task_inactivity_hours": {
+      "count": 418,
+      "percentage": 0.83,
+      "upper_threshold": 17.4
+    },
+    "recent_context_switches": {
+      "count": 512,
+      "percentage": 1.02,
+      "upper_threshold": 24.0
+    }
+  },
+  "leakage_check_passed": true,
+  "audit_status": "PASSED"
+}
