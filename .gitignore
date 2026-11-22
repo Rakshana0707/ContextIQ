@@ -98,3 +98,11 @@ forgetting-ml/pydeps/
 forgetting-ml/userbase/
 *.zip
 .trae/
+
+# Desktop Agent runtime artifacts
+desktop-agent/data/
+desktop-agent/*.pid
+desktop-agent/.pytest_temp/
+*.db
+*.db-wal
+*.db-shm
