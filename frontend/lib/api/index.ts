@@ -13,3 +13,6 @@ export { insightsApi } from "@/lib/api/services/insights";
 export type { InsightsApi } from "@/lib/api/services/insights";
 export { feedbackApi } from "@/lib/api/services/feedback";
 export type { FeedbackApi } from "@/lib/api/services/feedback";
+export { telemetryApi } from "@/lib/api/services/telemetry";
+export type { TelemetryApi } from "@/lib/api/services/telemetry";
+

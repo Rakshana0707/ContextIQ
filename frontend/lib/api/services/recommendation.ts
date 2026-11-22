@@ -137,14 +137,17 @@ const liveRecommendationApi: RecommendationApi = {
             id: `rec-anchor-${anchors[0].id || "0"}`,
             recommendationType: "one_more_thing",
             triggeringBehaviour: "Context switch / departure transition detected",
-            evidence: [{ feature: "anchor_alert", value: "Flagged during onboarding" }],
+            evidence: [{ field: "anchor_alert", value: "Flagged during onboarding", source: "rules" }],
             evidenceStrength: 0.94,
             impactScore: 0.88,
             riskLevel: "HIGH",
-            status: "PROPOSED",
-            explanation: `Before moving to your next activity, verify: ${anchors[0].title}.`,
+            status: "PENDING",
+            context: anchors[0].context || "General",
+            reliableTasks: [],
+            feedback: [],
+            generatedAt: new Date().toISOString(),
             expectedBenefit: "Guaranteed cognitive closure & zero mental leak",
-            suggestedTasks: [{ id: anchors[0].id || "t-1", title: anchors[0].title, category: "Memory Anchor", estimatedMinutes: 5, priority: "HIGH" }],
+            suggestedTasks: [{ taskId: anchors[0].id, title: anchors[0].title, reason: "Memory Anchor" }],
           });
         }
 
@@ -153,14 +156,17 @@ const liveRecommendationApi: RecommendationApi = {
             id: `rec-chore-${chores[0].id || "1"}`,
             recommendationType: "one_more_thing",
             triggeringBehaviour: "Routine daily cadence window",
-            evidence: [{ feature: "daily_habit", value: "Recurring chore" }],
+            evidence: [{ field: "daily_habit", value: "Recurring chore", source: "habits" }],
             evidenceStrength: 0.82,
             impactScore: 0.68,
             riskLevel: "MEDIUM",
-            status: "PROPOSED",
-            explanation: `Knock out '${chores[0].title}' now to clear background mental clutter.`,
+            status: "PENDING",
+            context: chores[0].context || "Home",
+            reliableTasks: [],
+            feedback: [],
+            generatedAt: new Date().toISOString(),
             expectedBenefit: "Reduced background cognitive friction by 25%",
-            suggestedTasks: [{ id: chores[0].id || "t-2", title: chores[0].title, category: "Daily Chores", estimatedMinutes: 20, priority: "MEDIUM" }],
+            suggestedTasks: [{ taskId: chores[0].id, title: chores[0].title, reason: "Daily Chores" }],
           });
         }
 

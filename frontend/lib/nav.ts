@@ -8,6 +8,7 @@ import {
   BrainCircuit,
   Activity,
   ShieldCheck,
+  Radio,
 } from "lucide-react";
 
 export interface NavItem {
@@ -35,6 +36,12 @@ export const navItems: NavItem[] = [
     label: "Context & Micro-Delays",
     icon: Radar,
     description: "Focus, interruptions, and recovery lag",
+  },
+  {
+    href: "/telemetry",
+    label: "Telemetry & Agent",
+    icon: Radio,
+    description: "Live desktop activity, interruptions & agent status",
   },
   {
     href: "/predictions",

@@ -391,6 +391,7 @@ const liveAnalyticsApi: AnalyticsApi = {
     if (res.data) {
       const raw = res.data;
       const data: HeatmapData = {
+        metric: raw.metric ?? raw.value_metric ?? metric ?? "FORGET_RATE",
         rows: Array.isArray(raw.rows) ? raw.rows : [],
         columns: Array.isArray(raw.columns) ? raw.columns : [],
         cells: Array.isArray(raw.cells) ? raw.cells : [],

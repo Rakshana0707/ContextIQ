@@ -68,6 +68,7 @@ export interface Task {
   tags: string[];
   forgottenCount: number;
   completionStreak: number;
+  isRecurring?: boolean;
 }
 
 export interface CreateTaskInput {

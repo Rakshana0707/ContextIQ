@@ -41,10 +41,11 @@ export function SHAPWaterfall({ reasons, baseValue, className }: SHAPWaterfallPr
 
       <div className="space-y-2">
         {reasons.map((reason, idx) => {
-          const impact = reason.impact ?? (reason.direction === "decreasing" ? -reason.weight : reason.weight);
+          const weight = reason.weight ?? 0;
+          const impact = reason.impact ?? (reason.direction === "decreasing" ? -weight : weight);
           const isPositive = impact >= 0;
           const absImpact = Math.abs(impact);
-          const barWidthPercent = Math.min(100, Math.round((absImpact / maxImpact) * 100));
+          const barWidthPercent = Math.min(100, Math.round((absImpact / (maxImpact || 1)) * 100));
 
           return (
             <div key={idx} className="group text-xs">

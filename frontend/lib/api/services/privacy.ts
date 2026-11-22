@@ -92,80 +92,98 @@ export interface DataPurgeResponse {
 
 export const privacyApi = {
   async getConsent(deviceId?: string): Promise<TelemetryConsent | null> {
-    return apiClient.request<TelemetryConsent | null>("/privacy/consent", {
-      service: "core",
+    const res = await apiClient.request<TelemetryConsent | null>("/privacy/consent", {
+      baseUrl: "core",
       query: deviceId ? { device_id: deviceId } : undefined,
     });
+    return res.data;
   },
 
   async grantConsent(payload: ConsentGrantPayload): Promise<TelemetryConsent> {
-    return apiClient.request<TelemetryConsent>("/privacy/consent", {
-      service: "core",
+    const res = await apiClient.request<TelemetryConsent>("/privacy/consent", {
+      baseUrl: "core",
       method: "POST",
       body: payload,
     });
+    if (!res.data) throw new Error(res.error?.message ?? "Failed to grant consent");
+    return res.data;
   },
 
   async revokeConsent(payload: ConsentRevokePayload = {}): Promise<TelemetryConsent> {
-    return apiClient.request<TelemetryConsent>("/privacy/consent/revoke", {
-      service: "core",
+    const res = await apiClient.request<TelemetryConsent>("/privacy/consent/revoke", {
+      baseUrl: "core",
       method: "POST",
       body: payload,
     });
+    if (!res.data) throw new Error(res.error?.message ?? "Failed to revoke consent");
+    return res.data;
   },
 
   async getConsentHistory(): Promise<TelemetryConsent[]> {
-    return apiClient.request<TelemetryConsent[]>("/privacy/consent/history", {
-      service: "core",
+    const res = await apiClient.request<TelemetryConsent[]>("/privacy/consent/history", {
+      baseUrl: "core",
     });
+    return res.data ?? [];
   },
 
   async getSettings(): Promise<PrivacySettings> {
-    return apiClient.request<PrivacySettings>("/privacy/settings", {
-      service: "core",
+    const res = await apiClient.request<PrivacySettings>("/privacy/settings", {
+      baseUrl: "core",
     });
+    if (!res.data) throw new Error(res.error?.message ?? "Failed to fetch settings");
+    return res.data;
   },
 
   async updateSettings(payload: PrivacySettingsUpdatePayload): Promise<PrivacySettings> {
-    return apiClient.request<PrivacySettings>("/privacy/settings", {
-      service: "core",
+    const res = await apiClient.request<PrivacySettings>("/privacy/settings", {
+      baseUrl: "core",
       method: "PATCH",
       body: payload,
     });
+    if (!res.data) throw new Error(res.error?.message ?? "Failed to update settings");
+    return res.data;
   },
 
   async getExclusions(): Promise<AppExclusion[]> {
-    return apiClient.request<AppExclusion[]>("/privacy/exclusions", {
-      service: "core",
+    const res = await apiClient.request<AppExclusion[]>("/privacy/exclusions", {
+      baseUrl: "core",
     });
+    return res.data ?? [];
   },
 
   async addExclusion(payload: AppExclusionPayload): Promise<AppExclusion> {
-    return apiClient.request<AppExclusion>("/privacy/exclusions", {
-      service: "core",
+    const res = await apiClient.request<AppExclusion>("/privacy/exclusions", {
+      baseUrl: "core",
       method: "POST",
       body: payload,
     });
+    if (!res.data) throw new Error(res.error?.message ?? "Failed to add exclusion");
+    return res.data;
   },
 
   async removeExclusion(exclusionId: string): Promise<void> {
-    return apiClient.request<void>(`/privacy/exclusions/${exclusionId}`, {
-      service: "core",
+    const res = await apiClient.request<void>(`/privacy/exclusions/${exclusionId}`, {
+      baseUrl: "core",
       method: "DELETE",
     });
+    if (res.error) throw new Error(res.error.message);
   },
 
   async purgeData(payload: DataPurgePayload): Promise<DataPurgeResponse> {
-    return apiClient.request<DataPurgeResponse>("/privacy/data/purge", {
-      service: "core",
+    const res = await apiClient.request<DataPurgeResponse>("/privacy/data/purge", {
+      baseUrl: "core",
       method: "POST",
       body: payload,
     });
+    if (!res.data) throw new Error(res.error?.message ?? "Failed to purge data");
+    return res.data;
   },
 
   async getMetadata(): Promise<TelemetryMetadataSummary> {
-    return apiClient.request<TelemetryMetadataSummary>("/privacy/metadata", {
-      service: "core",
+    const res = await apiClient.request<TelemetryMetadataSummary>("/privacy/metadata", {
+      baseUrl: "core",
     });
+    if (!res.data) throw new Error(res.error?.message ?? "Failed to fetch metadata");
+    return res.data;
   },
 };

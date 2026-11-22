@@ -28,7 +28,7 @@ describe("ForgetRiskPanel", () => {
     render(<ForgetRiskPanel />);
 
     await waitFor(() => {
-      expect(screen.getByText("Lab Record")).toBeInTheDocument();
+      expect(screen.getByText("Core Feature Implementation")).toBeInTheDocument();
     });
 
     expect(screen.getByText("82%")).toBeInTheDocument();

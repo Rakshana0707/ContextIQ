@@ -13,6 +13,8 @@ const badgeVariants = cva(
           "border-border/80 bg-secondary/70 text-secondary-foreground",
         outline:
           "border-border/80 bg-card/60 text-foreground",
+        destructive:
+          "border-destructive/30 bg-destructive/15 text-destructive",
         high:
           "border-destructive/30 bg-destructive/15 text-destructive",
         medium:
