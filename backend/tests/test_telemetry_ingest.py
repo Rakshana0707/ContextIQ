@@ -55,10 +55,12 @@ def test_telemetry_batch_ingestion_success(client):
         session.add(consent)
         session.commit()
 
+    ev1_id = str(uuid.uuid4())
+    ev2_id = str(uuid.uuid4())
     payload = {
         "events": [
             {
-                "event_id": "018d9f4a-0001-7000-a000-000000000001",
+                "event_id": ev1_id,
                 "user_id": str(user_id),
                 "event_type": "application_activated",
                 "event_timestamp": "2026-11-22T10:00:00Z",
@@ -66,7 +68,7 @@ def test_telemetry_batch_ingestion_success(client):
                 "payload": {"process_id": 1234},
             },
             {
-                "event_id": "018d9f4a-0002-7000-a000-000000000002",
+                "event_id": ev2_id,
                 "user_id": str(user_id),
                 "event_type": "application_deactivated",
                 "event_timestamp": "2026-11-22T10:05:00Z",
