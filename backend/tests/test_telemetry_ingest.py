@@ -24,7 +24,8 @@ def compile_jsonb_sqlite(type_, compiler, **kw):
 import app.models  # Register all models on Base
 from app.db.session import Base, engine
 from app.main import app
-from app.models.telemetry_consent import UserPrivacySettings
+from app.models.enums import ConsentStatus, TelemetryCategory
+from app.models.telemetry_consent import TelemetryConsent, UserPrivacySettings
 from app.models.user import User
 
 
@@ -44,6 +45,14 @@ def test_telemetry_batch_ingestion_success(client):
     with Session(engine) as session:
         user = User(id=user_id, email=f"col_{user_id.hex[:6]}@example.com", display_name="Collector User")
         session.add(user)
+        consent = TelemetryConsent(
+            user_id=user_id,
+            consent_status=ConsentStatus.GRANTED,
+            enabled_categories=[TelemetryCategory.APP_TRANSITIONS.value],
+            granted_timestamp=datetime.now(timezone.utc),
+            updated_timestamp=datetime.now(timezone.utc),
+        )
+        session.add(consent)
         session.commit()
 
     payload = {
@@ -80,6 +89,14 @@ def test_telemetry_batch_rejected_when_user_monitoring_paused(client):
     with Session(engine) as session:
         user = User(id=user_id, email=f"paused_{user_id.hex[:6]}@example.com", display_name="Paused User")
         session.add(user)
+        consent = TelemetryConsent(
+            user_id=user_id,
+            consent_status=ConsentStatus.GRANTED,
+            enabled_categories=[TelemetryCategory.APP_TRANSITIONS.value],
+            granted_timestamp=datetime.now(timezone.utc),
+            updated_timestamp=datetime.now(timezone.utc),
+        )
+        session.add(consent)
         # Set user privacy settings to paused
         settings = UserPrivacySettings(
             user_id=user_id,

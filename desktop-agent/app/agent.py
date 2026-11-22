@@ -77,6 +77,7 @@ class DesktopAgent:
             exclusion_manager=self.exclusion_manager,
             health_monitor=self.health_monitor,
             user_id=self.config.user_id,
+            device_id=self.config.device_id,
             sync_interval_seconds=self.config.sync_interval_seconds,
             batch_size=self.config.batch_size,
             max_retries=self.config.max_retries,
@@ -175,6 +176,12 @@ class DesktopAgent:
         # Initial policy fetch from backend
         self._initial_backend_sync()
 
+        # Emit agent_started event if consented
+        if self.consent_checker.is_collection_allowed():
+            started_ev = self.event_builder.build_agent_started()
+            self.event_queue.put(started_ev)
+            self._flush_queue_to_storage()
+
         # Start background sync worker
         self.sync_worker.start()
 
@@ -189,6 +196,22 @@ class DesktopAgent:
             self._stop_event.wait(timeout=self.config.polling_interval_seconds)
 
         self._shutdown()
+
+    def pause_telemetry(self, duration_seconds: float | None = None, reason: str = "USER_REQUEST") -> None:
+        """Pause telemetry collection and emit telemetry_paused event."""
+        if self.consent_checker.is_collection_allowed():
+            paused_ev = self.event_builder.build_telemetry_paused(duration_seconds=duration_seconds, reason=reason)
+            self.event_queue.put(paused_ev)
+            self._flush_queue_to_storage()
+        self.consent_checker.pause(duration_seconds=duration_seconds)
+
+    def resume_telemetry(self) -> None:
+        """Resume telemetry collection and emit telemetry_resumed event."""
+        self.consent_checker.resume()
+        if self.consent_checker.is_collection_allowed():
+            resumed_ev = self.event_builder.build_telemetry_resumed()
+            self.event_queue.put(resumed_ev)
+            self._flush_queue_to_storage()
 
     def stop(self) -> None:
         """Request agent shutdown."""
@@ -207,6 +230,13 @@ class DesktopAgent:
             last_deact = self.activity_tracker.flush_current_activity(transition_trigger="AGENT_SHUTDOWN")
             if last_deact:
                 self.event_queue.put(last_deact)
+
+        # Emit agent_stopped event if consented
+        if self.consent_checker.is_collection_allowed():
+            stopped_ev = self.event_builder.build_agent_stopped(
+                uptime_seconds=time.monotonic() - self.health_monitor.start_time_monotonic
+            )
+            self.event_queue.put(stopped_ev)
 
         # Flush all remaining events to SQLite
         while not self.event_queue.is_empty():

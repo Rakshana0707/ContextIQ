@@ -16,6 +16,7 @@ from app.models.recommendation import Recommendation  # noqa: F401
 from app.models.recommendation_feedback import RecommendationFeedback  # noqa: F401
 from app.models.behaviour_metric import BehaviourMetric  # noqa: F401
 from app.models.telemetry_consent import TelemetryConsent, UserPrivacySettings, UserAppExclusion  # noqa: F401
+from app.models.raw_telemetry_event import RawTelemetryEvent  # noqa: F401
 
 __all__ = [
     "User",
@@ -32,4 +33,5 @@ __all__ = [
     "TelemetryConsent",
     "UserPrivacySettings",
     "UserAppExclusion",
+    "RawTelemetryEvent",
 ]

@@ -116,3 +116,15 @@ class TelemetryCategory(str, Enum):
     BEHAVIORAL_ANALYTICS = "BEHAVIORAL_ANALYTICS"
     LOCAL_STORAGE = "LOCAL_STORAGE"
     SERVER_SYNC = "SERVER_SYNC"
+
+
+class TelemetryEventType(str, Enum):
+    APPLICATION_ACTIVATED = "application_activated"
+    APPLICATION_DEACTIVATED = "application_deactivated"
+    USER_IDLE_STARTED = "user_idle_started"
+    USER_ACTIVE_RETURNED = "user_active_returned"
+    AGENT_STARTED = "agent_started"
+    AGENT_STOPPED = "agent_stopped"
+    TELEMETRY_PAUSED = "telemetry_paused"
+    TELEMETRY_RESUMED = "telemetry_resumed"
+    HEARTBEAT = "heartbeat"

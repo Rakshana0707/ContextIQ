@@ -159,3 +159,46 @@ class EventBuilder:
             event_type="heartbeat",
             payload=payload,
         )
+
+    def build_agent_started(self, version: str = "1.0.0", startup_mode: str = "MANUAL") -> dict[str, Any]:
+        """Convenience method for agent_started event."""
+        payload = {
+            "version": version,
+            "startup_mode": startup_mode,
+        }
+        return self.build_event(
+            event_type="agent_started",
+            payload=payload,
+        )
+
+    def build_agent_stopped(self, uptime_seconds: float, reason: str = "CLEAN_SHUTDOWN") -> dict[str, Any]:
+        """Convenience method for agent_stopped event."""
+        payload = {
+            "uptime_seconds": round(max(0.0, uptime_seconds), 2),
+            "reason": reason,
+        }
+        return self.build_event(
+            event_type="agent_stopped",
+            payload=payload,
+        )
+
+    def build_telemetry_paused(self, duration_seconds: float | None = None, reason: str = "USER_REQUEST") -> dict[str, Any]:
+        """Convenience method for telemetry_paused event."""
+        payload = {
+            "duration_seconds": duration_seconds,
+            "reason": reason,
+        }
+        return self.build_event(
+            event_type="telemetry_paused",
+            payload=payload,
+        )
+
+    def build_telemetry_resumed(self, total_paused_seconds: float | None = None) -> dict[str, Any]:
+        """Convenience method for telemetry_resumed event."""
+        payload = {
+            "total_paused_seconds": total_paused_seconds,
+        }
+        return self.build_event(
+            event_type="telemetry_resumed",
+            payload=payload,
+        )
