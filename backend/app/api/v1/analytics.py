@@ -11,9 +11,77 @@ from app.db.session import get_db
 from app.models.behaviour_metric import BehaviourMetric
 from app.models.recommendation import Recommendation
 from app.schemas.analytics import BehaviourMetricRead, RecommendationRead
+from app.schemas.recovery_analytics import (
+    BehavioralFrictionResponse,
+    InterruptionTrendsResponse,
+    PersonalBaselineResponse,
+    RecoveryMetricsResponse,
+)
+from app.services.recovery_analytics import RecoveryAnalyticsService
 
 router = APIRouter(tags=["analytics"])
 
+
+# ---------------------------------------------------------------------------
+# Automated Recovery & Micro-Delay Analytics (Phase 3.7)
+# ---------------------------------------------------------------------------
+
+@router.get("/analytics/recovery", response_model=RecoveryMetricsResponse)
+@router.get("/recovery", response_model=RecoveryMetricsResponse)
+def get_recovery_analytics(
+    period_days: int = Query(30, ge=1, le=3650),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Calculates three-tier resumption lag, recovery time variability, and focus spans."""
+    return RecoveryAnalyticsService.get_recovery_metrics(
+        db=db, user_id=user_id, period_days=period_days
+    )
+
+
+@router.get("/analytics/friction", response_model=BehavioralFrictionResponse)
+@router.get("/friction", response_model=BehavioralFrictionResponse)
+def get_behavioral_friction_index(
+    period_days: int = Query(30, ge=1, le=3650),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Returns calibrated Behavioral Friction Index (0-100) preventing double counting."""
+    return RecoveryAnalyticsService.get_behavioral_friction_index(
+        db=db, user_id=user_id, period_days=period_days
+    )
+
+
+@router.get("/analytics/interruption-trends", response_model=InterruptionTrendsResponse)
+@router.get("/interruption-trends", response_model=InterruptionTrendsResponse)
+def get_interruption_trends(
+    period_days: int = Query(30, ge=1, le=3650),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Breaks down interruption frequency and recovery across circadian, app, and type contexts."""
+    return RecoveryAnalyticsService.get_interruption_trends(
+        db=db, user_id=user_id, period_days=period_days
+    )
+
+
+@router.get("/analytics/personal-baseline", response_model=PersonalBaselineResponse)
+@router.get("/personal-baseline", response_model=PersonalBaselineResponse)
+def get_personal_baseline(
+    baseline_days: int = Query(14, ge=3, le=90),
+    current_days: int = Query(3, ge=1, le=30),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Evaluates self-relative personal baseline and recent behavioral deviation trends."""
+    return RecoveryAnalyticsService.get_personal_baseline(
+        db=db, user_id=user_id, baseline_period_days=baseline_days, current_period_days=current_days
+    )
+
+
+# ---------------------------------------------------------------------------
+# Existing Analytics Feeds (Preserved)
+# ---------------------------------------------------------------------------
 
 @router.get("/behaviour-metrics", response_model=list[BehaviourMetricRead])
 def list_behaviour_metrics(
