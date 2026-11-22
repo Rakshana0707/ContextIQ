@@ -128,3 +128,25 @@ class TelemetryEventType(str, Enum):
     TELEMETRY_PAUSED = "telemetry_paused"
     TELEMETRY_RESUMED = "telemetry_resumed"
     HEARTBEAT = "heartbeat"
+
+
+class DetectedInterruptionType(str, Enum):
+    APPLICATION_SWITCH = "APPLICATION_SWITCH"
+    IDLE_INTERRUPTION = "IDLE_INTERRUPTION"
+    SESSION_DISRUPTION = "SESSION_DISRUPTION"
+    CONTEXT_SWITCH = "CONTEXT_SWITCH"
+    UNKNOWN_INTERRUPTION = "UNKNOWN_INTERRUPTION"
+
+
+class InterruptionSeverity(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
+
+
+class InterruptionFeedbackClassification(str, Enum):
+    GENUINE_INTERRUPTION = "GENUINE_INTERRUPTION"
+    INTENTIONAL_SWITCH = "INTENTIONAL_SWITCH"
+    IGNORE = "IGNORE"
+    INCORRECT_DETECTION = "INCORRECT_DETECTION"
