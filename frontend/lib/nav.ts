@@ -7,6 +7,7 @@ import {
   Sparkles,
   BrainCircuit,
   Activity,
+  ShieldCheck,
 } from "lucide-react";
 
 export interface NavItem {
@@ -58,5 +59,11 @@ export const navItems: NavItem[] = [
     label: "ML Monitoring",
     icon: Activity,
     description: "Drift detection & continual learning",
+  },
+  {
+    href: "/privacy",
+    label: "Privacy & Telemetry",
+    icon: ShieldCheck,
+    description: "Consent, pause controls, and app exclusions",
   },
 ];

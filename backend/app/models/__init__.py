@@ -15,6 +15,7 @@ from app.models.prediction import Prediction  # noqa: F401
 from app.models.recommendation import Recommendation  # noqa: F401
 from app.models.recommendation_feedback import RecommendationFeedback  # noqa: F401
 from app.models.behaviour_metric import BehaviourMetric  # noqa: F401
+from app.models.telemetry_consent import TelemetryConsent, UserPrivacySettings, UserAppExclusion  # noqa: F401
 
 __all__ = [
     "User",
@@ -28,4 +29,7 @@ __all__ = [
     "Recommendation",
     "RecommendationFeedback",
     "BehaviourMetric",
+    "TelemetryConsent",
+    "UserPrivacySettings",
+    "UserAppExclusion",
 ]

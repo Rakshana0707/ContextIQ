@@ -8,6 +8,7 @@ from app.api.v1.locations import router as locations_router
 from app.api.v1.analytics import router as analytics_router
 from app.api.v1.predictions import router as predictions_router
 from app.api.v1.recommendations import router as recommendations_router
+from app.api.v1.privacy import router as privacy_router
 
 api_router = APIRouter()
 
@@ -19,3 +20,4 @@ api_router.include_router(locations_router)
 api_router.include_router(analytics_router)
 api_router.include_router(predictions_router)
 api_router.include_router(recommendations_router)
+api_router.include_router(privacy_router)
