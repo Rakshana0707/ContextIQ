@@ -33,6 +33,8 @@ from app.models.task import Task
 from app.models.task_event import TaskEvent
 from app.models.interruption import Interruption
 from app.models.context_session import ContextSession
+from app.services.temporal_feature_extractor import TemporalFeatureExtractor
+from app.services.prediction_service import PredictionService
 
 logger = logging.getLogger(__name__)
 
@@ -215,7 +217,7 @@ def _build_task_features(db: Session, task: Task) -> dict[str, Any]:
         if total_int_count > 0:
             avg_interruption_duration_minutes = max(0.0, (total_int_secs / total_int_count) / 60.0)
 
-    return {
+    base_feats = {
         "task_id": str(task.id),
         "task_category": _map_task_category(task),
         "priority": _map_priority(task.priority),
@@ -234,6 +236,14 @@ def _build_task_features(db: Session, task: Task) -> dict[str, Any]:
         "avg_interruption_duration": avg_interruption_duration_minutes,
         "avg_session_duration": avg_session_duration,
     }
+    try:
+        telemetry_feats = TemporalFeatureExtractor.extract_features_for_task(
+            db=db, user_id=task.user_id, as_of=task.created_at or now
+        )
+        base_feats.update(telemetry_feats)
+    except Exception as exc:
+        logger.warning("orchestrator: temporal telemetry feature extraction failed: %s", exc)
+    return base_feats
 
 
 def _expire_previous_predictions(db: Session, task_id: uuid.UUID, user_id: uuid.UUID) -> None:
@@ -353,6 +363,8 @@ class Orchestrator:
             features = _build_task_features(db, task)
             prediction_payload = await self._call_forgetting_ml(features)
             if prediction_payload is None:
+                # Fallback to local prediction service using full telemetry pipeline
+                PredictionService.predict_for_task(db=db, user_id=user_id, task_id=task_id)
                 return
 
             _store_prediction(

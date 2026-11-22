@@ -50,6 +50,14 @@ DISPLAY_NAMES: Dict[str, str] = {
     "task_age_hours": "Task Age",
     "is_weekend": "Weekend Factor",
     "is_peak_focus_hours": "Peak Focus Hours",
+    # Automated v2.3 telemetry
+    "behavioral_friction_index": "Behavioral Friction Index",
+    "telemetry_coverage_ratio": "Telemetry Coverage",
+    "application_transition_frequency": "App Transition Frequency",
+    "session_fragmentation_score": "Session Fragmentation",
+    "time_since_last_activity_hours": "Time Since Last Activity",
+    "interruption_density": "Interruption Density",
+    "return_to_app_delay_seconds": "Return-to-App Delay",
 }
 
 WEEKDAY_NAMES = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
@@ -103,14 +111,25 @@ class FeatureMapper:
         if raw_feature_name == "deadline_distance_hours" and isinstance(value, (int, float)):
             return f"{float(value):.1f} hours"
 
-        if raw_feature_name in ("historical_forgetting_rate", "historical_completion_rate", "task_frequency"):
+        if raw_feature_name in ("historical_forgetting_rate", "historical_completion_rate", "task_frequency",
+                                "telemetry_coverage_ratio", "interruption_density", "session_fragmentation_score"):
             return f"{float(value):.1%}"
+
+        if raw_feature_name == "behavioral_friction_index":
+            return f"{float(value):.1f}/100"
+
+        if raw_feature_name in ("time_since_last_activity_hours", "task_inactivity_hours", "task_age_hours"):
+            return f"{float(value):.1f}h"
+
+        if raw_feature_name in ("avg_resumption_lag_seconds", "median_resumption_lag_seconds", "return_to_app_delay_seconds"):
+            return f"{float(value):.1f}s"
 
         if raw_feature_name in ("avg_interruption_duration", "avg_session_duration"):
             return f"{float(value):.1f} min"
 
         if raw_feature_name in ("interruptions_today", "recent_context_switches", "tasks_today",
-                                "previous_completion_count", "previous_forgetting_count"):
+                                "previous_completion_count", "previous_forgetting_count",
+                                "consecutive_interruption_count"):
             return str(int(value))
 
         return str(value)

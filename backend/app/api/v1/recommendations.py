@@ -59,63 +59,77 @@ def list_recommendations(
         chores = [t for t in tasks if "chore" in t.title.lower() or (t.context_tag and "chore" in t.context_tag.lower())]
         other_tasks = [t for t in tasks if t not in anchors and t not in chores]
 
+        from app.services.temporal_feature_extractor import TemporalFeatureExtractor
+        now_utc = datetime.now(timezone.utc)
+        telemetry_feats = TemporalFeatureExtractor.extract_features_for_task(db=db, user_id=user_id, as_of=now_utc)
+
+        # Proactive Telemetry Trigger: Elevated Friction / Interruption Clustering
+        if telemetry_feats["consecutive_interruption_count"] >= 3 or telemetry_feats["behavioral_friction_index"] >= 60.0:
+            db.add(Recommendation(
+                user_id=user_id,
+                recommendation_type=RecommendationType.BREAK_SUGGESTION,
+                title="Elevated Behavioral Friction — Suggest 5-Min Reset",
+                message=(
+                    f"Elevated friction detected (BFI: {telemetry_feats['behavioral_friction_index']:.1f}/100, "
+                    f"{telemetry_feats['recent_interruption_frequency']:.1f} recent disruptions/hr). "
+                    "A short cognitive reset helps break disruption clusters and reduces recovery delay."
+                ),
+                status=RecommendationStatus.PENDING,
+                priority=10,
+            ))
+
+        # Proactive Telemetry Trigger: High Context Switching
+        if telemetry_feats["context_switch_frequency_24h"] >= 8.0:
+            db.add(Recommendation(
+                user_id=user_id,
+                recommendation_type=RecommendationType.BATCH_TASKS,
+                title="High Context Switching — Batch Pending Tasks",
+                message=(
+                    f"Observed {telemetry_feats['context_switch_frequency_24h']:.0f} desktop transitions in the last 24h. "
+                    "Batching related tasks in dedicated focus blocks reduces resumption micro-delays."
+                ),
+                status=RecommendationStatus.PENDING,
+                priority=7,
+            ))
+
         if anchors:
             a = anchors[0]
             db.add(Recommendation(
                 user_id=user_id,
-                recommendation_type=RecommendationType.ONE_MORE_THING,
-                associated_task=a.title,
-                association_confidence=0.91,
-                triggering_behaviour="Pre-departure / context transition detected",
-                evidence=[{"feature": "anchor_alert", "value": "High forget risk anchor identified"}],
-                evidence_strength=0.94,
-                status=RecommendationStatus.PROPOSED,
-                priority=10,
-                explanation=f"Before context-switching, verify: {a.title}. Preventing this slip preserves mental flow.",
-                expected_benefit="Guaranteed cognitive closure & zero mental leak",
-                impact_score=0.88,
-                risk_level="HIGH",
+                task_id=a.id,
+                recommendation_type=RecommendationType.ONE_MORE_THING_NUDGE,
+                title=f"Pre-Departure Focus Check: {a.title}",
+                message=f"Before context-switching, verify: {a.title}. Preventing this slip preserves mental flow and ensures task closure.",
+                status=RecommendationStatus.PENDING,
+                priority=9,
             ))
 
         if chores:
             c = chores[0]
             db.add(Recommendation(
                 user_id=user_id,
-                recommendation_type=RecommendationType.ONE_MORE_THING,
-                associated_task=c.title,
-                association_confidence=0.78,
-                triggering_behaviour="Scheduled habit cadence window",
-                evidence=[{"feature": "chore_cadence", "value": "Recurring daily routine"}],
-                evidence_strength=0.82,
-                status=RecommendationStatus.PROPOSED,
-                priority=7,
-                explanation=f"Knock out '{c.title}' now to clear your background attentional space before deep focus.",
-                expected_benefit="Reduced background mental friction by 25%",
-                impact_score=0.68,
-                risk_level="MEDIUM",
+                task_id=c.id,
+                recommendation_type=RecommendationType.SCHEDULE_SHIFT,
+                title=f"Optimal Cadence: {c.title}",
+                message=f"Knock out '{c.title}' now during low-friction focus window to clear your background attentional space.",
+                status=RecommendationStatus.PENDING,
+                priority=6,
             ))
 
-        if other_tasks:
+        if other_tasks and not anchors and not chores:
             o = other_tasks[0]
             db.add(Recommendation(
                 user_id=user_id,
-                recommendation_type=RecommendationType.OPTIMAL_TIMING,
-                associated_task=o.title,
-                association_confidence=0.82,
-                triggering_behaviour="Peak chronometry alignment window",
-                evidence=[{"feature": "flow_window", "value": "Peak energy period"}],
-                evidence_strength=0.85,
-                status=RecommendationStatus.PROPOSED,
-                priority=8,
-                explanation=f"Prime window detected for '{o.title}'. Tackling this now leverages maximum cognitive throughput.",
-                expected_benefit="Estimated 35% faster resumption lag",
-                impact_score=0.75,
-                risk_level="LOW",
+                task_id=o.id,
+                recommendation_type=RecommendationType.REMINDER,
+                title=f"Focus Alignment Window: {o.title}",
+                message=f"Prime window detected for '{o.title}'. Tackling this now leverages observed calm desktop activity.",
+                status=RecommendationStatus.PENDING,
+                priority=5,
             ))
 
-        if tasks:
-            db.commit()
-            recommendations = list(db.scalars(stmt).all())
+        db.commit()
+        recommendations = list(db.scalars(stmt).all())
 
     rec_ids = [rec.id for rec in recommendations]
     if rec_ids:

@@ -19,6 +19,7 @@ from typing import List, Dict
 class FeatureSchemaVersion(str, Enum):
     V1_1 = "v1.1"  # Baseline: 16 raw features -> 29 transformed features
     V2_2 = "v2.2"  # Enhanced temporal & micro-delay features
+    V2_3 = "v2.3"  # Automated behavioral telemetry & calibrated friction
 
 
 # =====================================================================
@@ -91,6 +92,24 @@ V2_2_NUMERIC_FEATURES: List[str] = NUMERIC_FEATURES + ENHANCED_TEMPORAL_NUMERIC_
 V2_2_ALL_RAW_FEATURES: List[str] = CATEGORICAL_FEATURES + V2_2_NUMERIC_FEATURES
 
 
+# =====================================================================
+# Schema v2.3 — Automated Behavioral Telemetry & Calibrated Friction
+# =====================================================================
+
+AUTOMATED_TELEMETRY_NUMERIC_FEATURES: List[str] = [
+    "behavioral_friction_index",
+    "telemetry_coverage_ratio",
+    "application_transition_frequency",
+    "session_fragmentation_score",
+    "time_since_last_activity_hours",
+    "interruption_density",
+    "return_to_app_delay_seconds",
+]
+
+V2_3_NUMERIC_FEATURES: List[str] = V2_2_NUMERIC_FEATURES + AUTOMATED_TELEMETRY_NUMERIC_FEATURES
+V2_3_ALL_RAW_FEATURES: List[str] = CATEGORICAL_FEATURES + V2_3_NUMERIC_FEATURES
+
+
 # Human-readable descriptions used by the explainability layer to translate
 # a raw feature name + direction into a natural-language reason string.
 FEATURE_DESCRIPTIONS: Dict[str, str] = {
@@ -127,6 +146,31 @@ FEATURE_DESCRIPTIONS: Dict[str, str] = {
     "task_age_hours": "hours elapsed since task was created",
     "is_weekend": "whether the task is scheduled on a weekend",
     "is_peak_focus_hours": "whether the task coincides with peak cognitive focus hours",
+    # Automated v2.3 telemetry features
+    "behavioral_friction_index": "overall behavioral friction index reflecting multitasking strain",
+    "telemetry_coverage_ratio": "ratio of expected observation time monitored by telemetry agent",
+    "application_transition_frequency": "frequency of desktop application switches per hour",
+    "session_fragmentation_score": "proportion of work time broken by interruptions or brief switches",
+    "time_since_last_activity_hours": "hours elapsed since last observed desktop activity or task event",
+    "interruption_density": "percentage of active work session time lost to interruptions",
+    "return_to_app_delay_seconds": "elapsed time to return to primary work application after an interruption",
+}
+
+# Population baseline medians used for cold-start imputation
+POPULATION_FEATURE_DEFAULTS: Dict[str, float] = {
+    "behavioral_friction_index": 35.0,
+    "telemetry_coverage_ratio": 0.0,
+    "application_transition_frequency": 4.0,
+    "session_fragmentation_score": 0.25,
+    "time_since_last_activity_hours": 2.0,
+    "interruption_density": 0.15,
+    "recent_interruption_frequency": 1.5,
+    "avg_resumption_lag_seconds": 45.0,
+    "median_resumption_lag_seconds": 40.0,
+    "consecutive_interruption_count": 1.0,
+    "resumption_lag_std_seconds": 15.0,
+    "context_switch_frequency_24h": 6.0,
+    "return_to_app_delay_seconds": 30.0,
 }
 
 
@@ -143,5 +187,11 @@ SPEC_V2_2 = FeatureSpec(
     version=FeatureSchemaVersion.V2_2,
     categorical=list(CATEGORICAL_FEATURES),
     numeric=list(V2_2_NUMERIC_FEATURES),
+    target=TARGET_COLUMN,
+)
+SPEC_V2_3 = FeatureSpec(
+    version=FeatureSchemaVersion.V2_3,
+    categorical=list(CATEGORICAL_FEATURES),
+    numeric=list(V2_3_NUMERIC_FEATURES),
     target=TARGET_COLUMN,
 )

@@ -97,18 +97,6 @@ def list_behaviour_metrics(
     return list(db.scalars(stmt).all())
 
 
-@router.get("/recommendations", response_model=list[RecommendationRead])
-def list_recommendations(
-    user_id: uuid.UUID = Depends(get_current_user_id),
-    db: Session = Depends(get_db),
-):
-    stmt = (
-        select(Recommendation)
-        .where(Recommendation.user_id == user_id)
-        .order_by(Recommendation.created_at.desc())
-    )
-    return list(db.scalars(stmt).all())
-
 
 @router.get("/context-switch-timeline")
 async def get_context_switch_timeline(
@@ -149,3 +137,17 @@ async def get_task_context_heatmap(
             return response.json()
     except httpx.HTTPError as e:
         raise HTTPException(status_code=502, detail=f"Failed to contact data engine: {e}")
+
+
+@router.get("/analytics/feedback/candidate-dataset")
+@router.get("/feedback/candidate-dataset")
+def export_candidate_dataset(
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Exports user-validated interruption ground truth and task outcomes
+    as candidate training records for offline calibration.
+    """
+    from app.services.feedback_loop_service import FeedbackLoopService
+    return FeedbackLoopService.export_candidate_training_dataset(db=db, user_id=user_id)
