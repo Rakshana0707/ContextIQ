@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.core.errors import BadRequestError, ConflictError, NotFoundError
 from app.models.context_session import ContextSession
 from app.models.enums import ConsentStatus, TelemetryCategory
+from app.models.raw_telemetry_event import RawTelemetryEvent
 from app.models.telemetry_consent import TelemetryConsent, UserAppExclusion, UserPrivacySettings
 from app.schemas.privacy import (
     AppExclusionCreate,
@@ -258,10 +259,8 @@ def purge_user_telemetry(
     # 1. Purge raw_telemetry_events table if it exists
     if payload.purge_raw_telemetry:
         try:
-            result = db.execute(
-                text("DELETE FROM raw_telemetry_events WHERE user_id = :user_id"),
-                {"user_id": str(user_id)},
-            )
+            stmt = delete(RawTelemetryEvent).where(RawTelemetryEvent.user_id == user_id)
+            result = db.execute(stmt)
             raw_purged_count = result.rowcount or 0
         except Exception:
             # If table doesn't exist yet in standalone SQLite test mode, fallback gracefully
@@ -290,10 +289,11 @@ def enforce_retention_policy(db: Session, user_id: uuid.UUID) -> int:
     cutoff = datetime.now(timezone.utc) - timedelta(days=settings.raw_event_retention_days)
     purged = 0
     try:
-        result = db.execute(
-            text("DELETE FROM raw_telemetry_events WHERE user_id = :user_id AND event_timestamp < :cutoff"),
-            {"user_id": str(user_id), "cutoff": cutoff},
+        stmt = delete(RawTelemetryEvent).where(
+            RawTelemetryEvent.user_id == user_id,
+            RawTelemetryEvent.event_timestamp < cutoff,
         )
+        result = db.execute(stmt)
         purged = result.rowcount or 0
         db.commit()
     except Exception:
@@ -325,17 +325,15 @@ def get_metadata_summary(db: Session, user_id: uuid.UUID) -> TelemetryMetadataSu
     oldest = None
     newest = None
     try:
-        res = db.execute(
-            text(
-                "SELECT COUNT(*), MIN(event_timestamp), MAX(event_timestamp) "
-                "FROM raw_telemetry_events WHERE user_id = :user_id"
-            ),
-            {"user_id": str(user_id)},
-        ).first()
-        if res:
-            total_raw = res[0] or 0
-            oldest = res[1]
-            newest = res[2]
+        total_raw = db.scalar(
+            select(func.count(RawTelemetryEvent.event_id)).where(RawTelemetryEvent.user_id == user_id)
+        ) or 0
+        oldest = db.scalar(
+            select(func.min(RawTelemetryEvent.event_timestamp)).where(RawTelemetryEvent.user_id == user_id)
+        )
+        newest = db.scalar(
+            select(func.max(RawTelemetryEvent.event_timestamp)).where(RawTelemetryEvent.user_id == user_id)
+        )
     except Exception:
         pass
 
