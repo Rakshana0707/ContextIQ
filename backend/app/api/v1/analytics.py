@@ -224,3 +224,21 @@ def evaluate_causal_question_analytics(
     return CausalService.evaluate_causal_question(db=db, request=req)
 
 
+@router.get("/analytics/counterfactual/compare")
+def compare_counterfactuals_analytics(
+    learner: str = "doubly_robust_learner",
+    db: Session = Depends(get_db),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Compares counterfactual intervention candidates via analytics router."""
+    from app.schemas.counterfactual import CounterfactualComparisonRequest, CounterfactualLearnerType
+    from app.services.counterfactual_service import CounterfactualService
+
+    req = CounterfactualComparisonRequest(
+        user_id=user_id,
+        learner=CounterfactualLearnerType(learner),
+    )
+    return CounterfactualService.compare_interventions(db=db, request=req)
+
+
+

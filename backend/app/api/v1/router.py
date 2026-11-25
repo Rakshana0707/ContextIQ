@@ -19,6 +19,7 @@ from app.api.v1.scheduling import router as scheduling_router
 from app.api.v1.devices import router as devices_router
 from app.api.v1.activity import router as activity_router
 from app.api.v1.causal import router as causal_router
+from app.api.v1.counterfactual import router as counterfactual_router
 
 api_router = APIRouter()
 
@@ -41,4 +42,5 @@ api_router.include_router(scheduling_router)
 api_router.include_router(devices_router)
 api_router.include_router(activity_router)
 api_router.include_router(causal_router)
+api_router.include_router(counterfactual_router)
 

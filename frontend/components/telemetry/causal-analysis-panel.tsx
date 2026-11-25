@@ -26,6 +26,7 @@ import type {
   CausalQuestionSummary,
 } from "@/types/causal";
 import { causalApi, mockCausalResult } from "@/lib/api/services/causal";
+import { CounterfactualComparisonCard } from "@/components/telemetry/counterfactual-comparison-card";
 
 export function CausalAnalysisPanel() {
   const [questions, setQuestions] = useState<CausalQuestionSummary[]>([]);
@@ -366,6 +367,9 @@ export function CausalAnalysisPanel() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Phase 6.4: Counterfactual Intervention Comparison & Uplift */}
+      <CounterfactualComparisonCard />
     </div>
   );
 }
