@@ -1,0 +1,62 @@
+{
+  "expo": {
+    "name": "ContextIQ Mobile",
+    "slug": "contextiq-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#09090b"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.contextiq.mobile",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "ContextIQ uses your location to deliver contextual task reminders when arriving at your workplace.",
+        "UIBackgroundModes": [
+          "remote-notification"
+        ]
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#09090b"
+      },
+      "package": "com.contextiq.mobile",
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "POST_NOTIFICATIONS",
+        "ACCESS_COARSE_LOCATION",
+        "ACCESS_FINE_LOCATION",
+        "INTERNET"
+      ]
+    },
+    "plugins": [
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#6366f1"
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "ContextIQ delivers timely contextual reminders when arriving at designated workspaces."
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "contextiq-mobile-project-id"
+      }
+    }
+  }
+}

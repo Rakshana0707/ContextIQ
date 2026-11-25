@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { navItems } from "@/lib/nav";
-import { Activity, Sparkles, Flame, UserCheck, Settings2 } from "lucide-react";
+import { navItems, adaptiveNavItems } from "@/lib/nav";
+import { Activity, Sparkles, Flame, UserCheck, Settings2, Brain } from "lucide-react";
 import { USE_MOCK } from "@/lib/api";
 import { useUserProfile } from "@/context/user-profile-context";
 
@@ -58,7 +58,41 @@ export function Sidebar() {
               href={item.href}
               aria-current={active ? "page" : undefined}
               className={cn(
-                "group flex items-center gap-3 rounded-xl px-3 py-2.5 text-xs font-semibold transition-all duration-200",
+                "group flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200",
+                active
+                  ? "bg-indigo-50/90 text-indigo-700 shadow-xs border-r-2 border-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-500"
+                  : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"
+              )}
+            >
+              <Icon
+                className={cn(
+                  "h-4 w-4 shrink-0 transition-transform duration-200 group-hover:scale-110",
+                  active
+                    ? "text-indigo-600 dark:text-indigo-400"
+                    : "text-muted-foreground group-hover:text-foreground"
+                )}
+                aria-hidden="true"
+              />
+              <span className="truncate">{item.label}</span>
+            </Link>
+          );
+        })}
+
+        {/* Adaptive Intelligence Section */}
+        <div className="pt-3 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-muted-foreground/70 flex items-center gap-1.5 border-t border-border/50 mt-1">
+          <Brain className="h-3 w-3 text-indigo-500" />
+          <span>Adaptive Intelligence</span>
+        </div>
+        {adaptiveNavItems.map((item) => {
+          const active = pathname.startsWith(item.href);
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              className={cn(
+                "group flex items-center gap-3 rounded-xl px-3 py-2 text-xs font-semibold transition-all duration-200",
                 active
                   ? "bg-indigo-50/90 text-indigo-700 shadow-xs border-r-2 border-indigo-600 dark:bg-indigo-950/60 dark:text-indigo-300 dark:border-indigo-500"
                   : "text-muted-foreground hover:bg-muted/70 hover:text-foreground"

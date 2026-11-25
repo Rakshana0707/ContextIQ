@@ -242,14 +242,14 @@ def compute_behavioral_friction_score(
         interruption_component = 0.0
     
     # Context switch component
-    if not sessions_df.empty and len(sessions_df) > 0:
+    if not sessions_df.empty and len(sessions_df) > 0 and "context_switch_count" in sessions_df:
         switches_per_session = sessions_df["context_switch_count"].sum() / len(sessions_df)
         context_switch_component = min(100.0, (switches_per_session / 4.0) * 100)  # 4/session saturation
     else:
         context_switch_component = 0.0
     
     # Recovery component
-    if not sessions_df.empty:
+    if not sessions_df.empty and "resume_delay_seconds" in sessions_df:
         resume_delays = sessions_df["resume_delay_seconds"].dropna()
         if not resume_delays.empty:
             avg_recovery_minutes = resume_delays.mean() / 60.0

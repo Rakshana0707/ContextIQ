@@ -17,6 +17,7 @@ import {
   UserCircle2,
 } from "lucide-react";
 import { ThemeToggle } from "@/components/shared/theme-toggle";
+import { NotificationCenter } from "@/components/layout/notification-center";
 import { useUserProfile, AVAILABLE_LANGUAGES } from "@/context/user-profile-context";
 import type { LanguageCode, RolePersona } from "@/types/profile";
 import { Badge } from "@/components/ui/badge";
@@ -160,6 +161,8 @@ export function Topbar() {
           <ShieldCheck className="h-3.5 w-3.5" />
           <span>Flow Shield</span>
         </div>
+
+        <NotificationCenter />
 
         <ThemeToggle />
 

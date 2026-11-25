@@ -57,6 +57,8 @@ class UnifiedEvent:
     app_id: Optional[str] = None
     task_id: Optional[uuid.UUID] = None
     duration: float = 0.0
+    device_id: Optional[str] = None
+    device_type: str = "DESKTOP"
     payload: Dict[str, Any] = field(default_factory=dict)
 
 
@@ -106,12 +108,21 @@ class SessionReconstructionEngine:
             if ts.tzinfo is None:
                 ts = ts.replace(tzinfo=timezone.utc)
 
+            dev_type = (ev.payload or {}).get("device_type") if ev.payload else None
+            if not dev_type:
+                if "mobile" in (ev.source or "").lower() or (ev.device_id and "mobile" in str(ev.device_id).lower()):
+                    dev_type = "MOBILE"
+                else:
+                    dev_type = "DESKTOP"
+
             unified.append(
                 UnifiedEvent(
                     event_id=eid,
                     event_type=ev.event_type,
                     timestamp=ts,
                     app_id=_normalize_app_name(ev.application_identifier or ev.current_application_identifier),
+                    device_id=ev.device_id,
+                    device_type=dev_type,
                     payload=ev.payload or {},
                 )
             )
@@ -135,6 +146,7 @@ class SessionReconstructionEngine:
                     event_type=f"TASK_{tev.event_type.value}",
                     timestamp=ts,
                     task_id=tev.task_id,
+                    device_type="WEB",
                     payload={"event_type": tev.event_type.value},
                 )
             )
@@ -329,8 +341,9 @@ class SessionReconstructionEngine:
             seg_start = ev.timestamp
             next_ts = events[idx + 1].timestamp if idx + 1 < len(events) else end_time
             seg_duration = max(0.0, (next_ts - seg_start).total_seconds())
+            ev_type_norm = (ev.event_type or "").lower()
 
-            if ev.event_type == TelemetryEventType.APPLICATION_ACTIVATED.value and ev.app_id:
+            if ev_type_norm in (TelemetryEventType.APPLICATION_ACTIVATED.value, "app_focus", "app_activated") and ev.app_id:
                 if current_app and current_app != ev.app_id:
                     transition_count += 1
                 current_app = ev.app_id
@@ -344,11 +357,13 @@ class SessionReconstructionEngine:
                     "duration_seconds": round(seg_duration, 2),
                     "application_identifier": current_app,
                     "task_id": str(explicit_task_id) if explicit_task_id else None,
+                    "device_id": ev.device_id,
+                    "device_type": ev.device_type,
                     "notes": f"Active in {current_app}",
                 })
                 focused_seconds += seg_duration
 
-            elif ev.event_type == TelemetryEventType.USER_IDLE_STARTED.value:
+            elif ev_type_norm in (TelemetryEventType.USER_IDLE_STARTED.value, "idle_start", "idle_started"):
                 idle_seconds += seg_duration
                 prior_pause_time = seg_start
                 timeline.append({
@@ -359,10 +374,12 @@ class SessionReconstructionEngine:
                     "duration_seconds": round(seg_duration, 2),
                     "application_identifier": current_app,
                     "task_id": str(explicit_task_id) if explicit_task_id else None,
+                    "device_id": ev.device_id,
+                    "device_type": ev.device_type,
                     "notes": "User idle inactivity interval",
                 })
 
-            elif ev.event_type == TelemetryEventType.USER_ACTIVE_RETURNED.value:
+            elif ev_type_norm in (TelemetryEventType.USER_ACTIVE_RETURNED.value, "idle_return", "active_returned"):
                 if prior_pause_time:
                     resume_delay_seconds = max(0.0, (seg_start - prior_pause_time).total_seconds())
                 timeline.append({
@@ -373,6 +390,8 @@ class SessionReconstructionEngine:
                     "duration_seconds": round(seg_duration, 2),
                     "application_identifier": current_app,
                     "task_id": str(explicit_task_id) if explicit_task_id else None,
+                    "device_id": ev.device_id,
+                    "device_type": ev.device_type,
                     "notes": "Activity resumed",
                 })
 
@@ -388,6 +407,8 @@ class SessionReconstructionEngine:
                     "duration_seconds": round(int_dur, 2),
                     "application_identifier": ev.app_id or current_app,
                     "task_id": str(explicit_task_id) if explicit_task_id else None,
+                    "device_id": ev.device_id,
+                    "device_type": ev.device_type,
                     "notes": ev.payload.get("explanation") or ev.payload.get("notes") or "Interruption event",
                 })
 

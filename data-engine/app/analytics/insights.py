@@ -341,6 +341,7 @@ def generate_interruption_cost_insight(
             "interruption_hours": round(interruption_hours, 2),
             "switch_overhead_hours": round(switch_overhead_hours, 2),
             "total_time_lost_hours": round(total_time_lost, 2),
+            "time_lost_hours": round(total_time_lost, 2),
             "time_lost_percentage": round(time_lost_percentage, 1),
             "total_switches": int(total_switches),
         },
@@ -562,7 +563,13 @@ def generate_trend_insight(
     Recommendation: Focus attention on metrics with negative trends
     """
     if tasks_df.empty:
-        return {"insight_type": "behavioral_trends", "message": "Insufficient data"}
+        return {
+            "insight_type": "behavioral_trends",
+            "message": "Insufficient data",
+            "evidence": {},
+            "risk_level": "LOW",
+            "recommendation": "Collect more task data to evaluate behavioral trends over time.",
+        }
     
     cutoff = datetime.now() - timedelta(days=window_days)
     
@@ -587,7 +594,13 @@ def generate_trend_insight(
         })
     
     if len(daily_metrics) < 7:
-        return {"insight_type": "behavioral_trends", "message": "Insufficient time series data"}
+        return {
+            "insight_type": "behavioral_trends",
+            "message": "Insufficient time series data",
+            "evidence": {},
+            "risk_level": "LOW",
+            "recommendation": "At least 7 days of activity are required to establish behavioral trend trajectories.",
+        }
     
     metrics_df = pd.DataFrame(daily_metrics)
     
@@ -642,12 +655,24 @@ def generate_proactive_attention_insight(
     Recommendation: Prioritize or provide support for identified high-risk tasks
     """
     if tasks_df.empty:
-        return {"insight_type": "proactive_attention", "message": "Insufficient data"}
+        return {
+            "insight_type": "proactive_attention",
+            "message": "Insufficient data",
+            "evidence": {},
+            "risk_level": "LOW",
+            "recommendation": "Track tasks to enable proactive attention recommendations.",
+        }
     
     # Focus on active tasks
     active_tasks = tasks_df[~tasks_df["status"].isin(["completed", "forgotten", "cancelled"])]
     if active_tasks.empty:
-        return {"insight_type": "proactive_attention", "message": "No active tasks requiring attention"}
+        return {
+            "insight_type": "proactive_attention",
+            "message": "No active tasks requiring attention",
+            "evidence": {"total_active_tasks": 0, "high_risk_count": 0},
+            "risk_level": "LOW",
+            "recommendation": "All current tasks are resolved.",
+        }
     
     # Calculate risk scores for active tasks
     task_risks = []

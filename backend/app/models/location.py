@@ -31,6 +31,9 @@ class Location(Base, UUIDPKMixin, TimestampMixin):
     longitude: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     radius_meters: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    reminders_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    arrival_reminder_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    departure_reminder_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
     user: Mapped["User"] = relationship(back_populates="locations")
 

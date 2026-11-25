@@ -8,7 +8,9 @@ import { ErrorState, EmptyState } from "@/components/shared/async-states";
 import { TaskListItem } from "@/components/tasks/task-list-item";
 import { TaskCreateForm } from "@/components/tasks/task-create-form";
 import { TaskDetailDialog } from "@/components/tasks/task-detail-dialog";
+import { AdaptiveTaskRanking } from "@/components/tasks/adaptive-task-ranking";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Sparkles, ListChecks } from "lucide-react";
 import type { Task, TaskStatus } from "@/types";
 
 const STATUS_FILTERS: { label: string; value: TaskStatus | "ALL" }[] = [
@@ -21,6 +23,7 @@ const STATUS_FILTERS: { label: string; value: TaskStatus | "ALL" }[] = [
 ];
 
 export function TaskManager() {
+  const [viewMode, setViewMode] = useState<"adaptive" | "standard">("adaptive");
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "ALL">("ALL");
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -55,9 +58,28 @@ export function TaskManager() {
 
   return (
     <div className="space-y-6">
-      <TaskCreateForm onCreated={refetch} />
+      <div className="flex items-center justify-between border-b pb-3">
+        <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as "adaptive" | "standard")}>
+          <TabsList className="h-9">
+            <TabsTrigger value="adaptive" className="flex items-center gap-1.5 text-xs">
+              <Sparkles className="h-3.5 w-3.5 text-indigo-500" />
+              Adaptive Priority & Schedule
+            </TabsTrigger>
+            <TabsTrigger value="standard" className="flex items-center gap-1.5 text-xs">
+              <ListChecks className="h-3.5 w-3.5" />
+              Standard Task List
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-      <section aria-labelledby="task-list-heading">
+      {viewMode === "adaptive" ? (
+        <AdaptiveTaskRanking onTaskStarted={() => refetch()} />
+      ) : (
+        <>
+          <TaskCreateForm onCreated={refetch} />
+
+          <section aria-labelledby="task-list-heading">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <h2
             id="task-list-heading"
@@ -120,6 +142,8 @@ export function TaskManager() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
       />
+      </>
+      )}
     </div>
   );
 }

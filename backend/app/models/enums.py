@@ -49,10 +49,26 @@ class InterruptionType(str, Enum):
 class LocationType(str, Enum):
     HOME = "HOME"
     WORK = "WORK"
+    OFFICE = "OFFICE"
+    CAMPUS = "CAMPUS"
+    LIBRARY = "LIBRARY"
+    LABORATORY = "LABORATORY"
     GYM = "GYM"
     COMMUTE = "COMMUTE"
     STUDY = "STUDY"
     OTHER = "OTHER"
+
+
+class CheckInType(str, Enum):
+    MANUAL = "MANUAL"
+    GEOFENCE_ENTER = "GEOFENCE_ENTER"
+    GEOFENCE_EXIT = "GEOFENCE_EXIT"
+
+
+class RoutineAssociationSource(str, Enum):
+    EXPLICIT = "EXPLICIT"
+    STATISTICALLY_OBSERVED = "STATISTICALLY_OBSERVED"
+    LOW_CONFIDENCE = "LOW_CONFIDENCE"
 
 
 class AssociationType(str, Enum):

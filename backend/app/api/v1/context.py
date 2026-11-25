@@ -15,7 +15,15 @@ from app.schemas.context_session import (
     SessionReconstructionTriggerRequest,
     SessionTimelineSegment,
 )
+from app.schemas.location_context import (
+    LocationCheckInCreate,
+    LocationCheckInRead,
+    LocationContextCreate,
+    LocationContextRead,
+    LocationRecommendationsResponse,
+)
 from app.services import session_reconstruction_engine
+from app.services.location_context_service import LocationContextService
 
 router = APIRouter(prefix="/context", tags=["context-sessions"])
 
@@ -167,3 +175,73 @@ def correct_context_session_endpoint(
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+
+# ============================================================================
+# Phase 5.8: Location-Aware Contextual Intelligence and Smart Reminders
+# ============================================================================
+
+@router.get("/locations", response_model=list[LocationContextRead])
+def list_context_locations(
+    active_only: bool = Query(default=True),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Lists user-defined places and reminder preferences."""
+    return LocationContextService.list_locations(db, user_id, active_only=active_only)
+
+
+@router.post("/locations", response_model=LocationContextRead, status_code=status.HTTP_201_CREATED)
+def create_context_location(
+    payload: LocationContextCreate,
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Creates a user-defined physical location with arrival/departure reminder toggles."""
+    return LocationContextService.create_location(db, user_id, payload)
+
+
+@router.delete("/locations/{location_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_context_location(
+    location_id: uuid.UUID,
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Deletes a user-defined location and its associated routine associations."""
+    LocationContextService.delete_location(db, user_id, location_id)
+
+
+@router.post("/check-ins", response_model=LocationCheckInRead, status_code=status.HTTP_201_CREATED)
+def record_location_check_in(
+    payload: LocationCheckInCreate,
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Records a manual check-in or edge geofence entry/exit.
+    Debounces duplicate transitions within 5 minutes to prevent GPS boundary jitter.
+    """
+    checkin, is_duplicate = LocationContextService.record_check_in(db, user_id, payload)
+    return checkin
+
+
+@router.get("/location-recommendations", response_model=LocationRecommendationsResponse)
+def get_location_recommendations(
+    location_id: Optional[uuid.UUID] = Query(default=None),
+    location_name: Optional[str] = Query(default=None),
+    trigger_type: str = Query(default="ARRIVAL", pattern="^(ARRIVAL|DEPARTURE|MANUAL)$"),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """
+    Retrieves smart contextual reminders (arrival focus tasks or departure 'One More Thing' tasks).
+    Respects quiet hours and active focus session suppression.
+    """
+    return LocationContextService.get_location_recommendations(
+        db=db,
+        user_id=user_id,
+        location_id=location_id,
+        location_name=location_name,
+        trigger_type=trigger_type,
+    )
+

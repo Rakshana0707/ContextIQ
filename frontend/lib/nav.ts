@@ -9,6 +9,16 @@ import {
   Activity,
   ShieldCheck,
   Radio,
+  UserCheck,
+  Clock,
+  Zap,
+  GitFork,
+  Scale,
+  Bell,
+  Calendar,
+  CalendarDays,
+  Laptop,
+  MapPin,
 } from "lucide-react";
 
 export interface NavItem {
@@ -72,5 +82,68 @@ export const navItems: NavItem[] = [
     label: "Privacy & Telemetry",
     icon: ShieldCheck,
     description: "Consent, pause controls, and app exclusions",
+  },
+  {
+    href: "/calendar",
+    label: "Smart Calendar",
+    icon: CalendarDays,
+    description: "Ecosystem calendar & intelligent scheduling",
+  },
+  {
+    href: "/activity",
+    label: "Cross-Device Timeline",
+    icon: Laptop,
+    description: "Desktop & mobile timeline reconstruction",
+  },
+  {
+    href: "/context/locations",
+    label: "Location Intelligence",
+    icon: MapPin,
+    description: "Places, routines & arrival/departure reminders",
+  },
+  {
+    href: "/settings/integrations",
+    label: "Calendar Integrations",
+    icon: Calendar,
+    description: "Google Calendar & Outlook synchronization",
+  },
+];
+
+export const adaptiveNavItems: NavItem[] = [
+  {
+    href: "/adaptive/profile",
+    label: "Digital Twin Profile",
+    icon: UserCheck,
+    description: "Empirical behavioral patterns & dimensions",
+  },
+  {
+    href: "/adaptive/focus",
+    label: "Focus-Window Explorer",
+    icon: Clock,
+    description: "Circadian suitability & high-quality focus periods",
+  },
+  {
+    href: "/adaptive/interventions",
+    label: "Intervention Center",
+    icon: Zap,
+    description: "Actionable recommendations & explainability evidence",
+  },
+  {
+    href: "/adaptive/learning",
+    label: "Contextual Bandit",
+    icon: GitFork,
+    description: "LinUCB & Thompson Sampling exploration metrics",
+  },
+  {
+    href: "/adaptive/effectiveness",
+    label: "Causal Effectiveness",
+    icon: Scale,
+    description: "Doubly Robust ATE & randomized holdout analytics",
+  },
+  {
+    href: "/adaptive/notifications",
+    label: "Notification Controls",
+    icon: Bell,
+    description: "Quiet hours, cognitive limits & fatigue metrics",
   },
 ];
