@@ -15,6 +15,7 @@ from app.core.config import get_settings
 from app.core.errors import register_exception_handlers
 from app.core.logging_config import setup_structured_logging
 from app.core.middleware import ObservabilityMiddleware
+from app.core.security_middleware import SecurityHardeningMiddleware
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,7 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.add_middleware(SecurityHardeningMiddleware)
 app.add_middleware(ObservabilityMiddleware)
 app.add_middleware(
     CORSMiddleware,

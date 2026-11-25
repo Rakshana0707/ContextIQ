@@ -2,6 +2,7 @@ import uuid
 from typing import Optional
 
 from fastapi import APIRouter, Depends, Request, status
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.core.deps import get_current_user_id
@@ -142,3 +143,33 @@ def get_telemetry_metadata(
 ):
     """Summary of collected telemetry metadata, event volumes, and storage boundaries."""
     return privacy_service.get_metadata_summary(db, user_id)
+
+
+class AccountDeleteRequest(BaseModel):
+    confirmation_phrase: str
+
+
+@router.get("/data/export")
+def export_user_data(
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """
+    GDPR Article 20 Right to Data Portability.
+    Exports all personal records, configurations, tasks, and telemetry metadata.
+    """
+    return privacy_service.export_user_data(db, user_id)
+
+
+@router.post("/account/delete")
+def delete_user_account(
+    payload: AccountDeleteRequest,
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """
+    GDPR Article 17 Right to Erasure.
+    Permanently erases all user profile records, tasks, telemetry, and workflow history.
+    Requires confirmation phrase 'DELETE MY ENTIRE ACCOUNT'.
+    """
+    return privacy_service.delete_user_account(db, user_id, payload.confirmation_phrase)

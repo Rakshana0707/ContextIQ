@@ -18,7 +18,11 @@ from app.schemas.telemetry import (
     TelemetryEventsQueryResponse,
     TelemetryEventRead,
 )
-from app.services.privacy_service import get_active_consent, get_or_create_privacy_settings
+from app.services.privacy_service import (
+    get_active_consent,
+    get_or_create_privacy_settings,
+    validate_no_surveillance_payload,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -100,6 +104,10 @@ def _process_events_batch(
     duplicate_ids: list[str] = []
 
     for ev in events:
+        # Validate privacy invariant: reject prohibited surveillance payloads
+        if ev.payload:
+            validate_no_surveillance_payload(ev.payload)
+
         if ev.event_id in existing_ids:
             duplicate_ids.append(ev.event_id)
             continue

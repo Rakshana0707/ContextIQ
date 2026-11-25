@@ -25,6 +25,7 @@ class User(Base, UUIDPKMixin, TimestampMixin):
     hashed_password: Mapped[str | None] = mapped_column(String(255), nullable=True)
     timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="UTC")
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    is_admin: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
 
     role_persona: Mapped[str] = mapped_column(String(64), nullable=False, default="developer")
     custom_title: Mapped[str] = mapped_column(String(255), nullable=False, default="Senior Software Engineer")

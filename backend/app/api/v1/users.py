@@ -3,12 +3,13 @@ from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List
 
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials
 from jose import jwt
 from pydantic import BaseModel, EmailStr
 from sqlalchemy.orm import Session
 
 from app.core.config import get_settings
-from app.core.deps import get_current_user
+from app.core.deps import TokenBlacklist, bearer_scheme, get_current_user
 from app.core.errors import NotFoundError
 from app.db.session import get_db
 from app.models.user import User
@@ -84,6 +85,14 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)):
         "user": user,
         "tasks": tasks,
     }
+
+
+@router.post("/logout", status_code=status.HTTP_200_OK)
+def logout(credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme)):
+    """Revokes the active bearer JWT token so it cannot be used again."""
+    if credentials and credentials.credentials:
+        TokenBlacklist.revoke(credentials.credentials)
+    return {"message": "Successfully logged out. Session token has been revoked."}
 
 
 @router.post("/register", response_model=UserRead, status_code=status.HTTP_201_CREATED)

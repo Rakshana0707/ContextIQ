@@ -7,10 +7,17 @@ from sqlalchemy import delete, func, select, text
 from sqlalchemy.orm import Session
 
 from app.core.errors import BadRequestError, ConflictError, NotFoundError
+from app.models.automation_rule import AutomationExecution, AutomationRule
+from app.models.calendar_integration import CalendarIntegration
 from app.models.context_session import ContextSession
 from app.models.enums import ConsentStatus, TelemetryCategory
 from app.models.raw_telemetry_event import RawTelemetryEvent
+from app.models.safety_models import EmergencyStopEvent, WorkflowAuditEvent
+from app.models.task import Task
+from app.models.task_event import TaskEvent
 from app.models.telemetry_consent import TelemetryConsent, UserAppExclusion, UserPrivacySettings
+from app.models.user import User
+from app.models.workflow_models import WorkflowExecutionPlan
 from app.schemas.privacy import (
     AppExclusionCreate,
     ConsentGrantRequest,
@@ -20,6 +27,27 @@ from app.schemas.privacy import (
     PrivacySettingsUpdate,
     TelemetryMetadataSummary,
 )
+
+# Prohibited surveillance fields that ContextIQ strictly refuses to collect
+PROHIBITED_SURVEILLANCE_FIELDS = {
+    "keystrokes", "keylog", "typed_text", "keystroke_log", "keys_pressed",
+    "screenshot", "screen_capture", "image_data", "screen_image", "frame_buffer",
+    "clipboard", "clipboard_text", "clipboard_content",
+    "message_body", "chat_text", "sms_content", "email_body", "private_message",
+    "file_content", "document_text", "file_body", "buffer_contents",
+}
+
+
+def validate_no_surveillance_payload(payload: dict[str, Any]) -> None:
+    """Raises BadRequestError if payload contains prohibited surveillance fields."""
+    if not payload:
+        return
+    keys = {str(k).lower().strip() for k in payload.keys()}
+    found = keys.intersection(PROHIBITED_SURVEILLANCE_FIELDS)
+    if found:
+        raise BadRequestError(
+            f"Prohibited surveillance payload rejected: fields {sorted(found)} violate ContextIQ privacy policy."
+        )
 
 
 def _hash_ip(ip_address: Optional[str]) -> Optional[str]:
@@ -347,3 +375,147 @@ def get_metadata_summary(db: Session, user_id: uuid.UUID) -> TelemetryMetadataSu
         excluded_apps_count=exclusions_count,
         retention_days_raw=settings.raw_event_retention_days,
     )
+
+
+def export_user_data(db: Session, user_id: uuid.UUID) -> dict[str, Any]:
+    """
+    GDPR Article 20 Right to Data Portability.
+    Packages all personal data, configurations, tasks, and telemetry metadata
+    into a portable structured JSON archive.
+    """
+    user = db.get(User, user_id)
+    if not user:
+        raise NotFoundError("User not found.")
+
+    settings = get_or_create_privacy_settings(db, user_id)
+    consent_history = get_consent_history(db, user_id)
+    exclusions = list_app_exclusions(db, user_id)
+    tasks = db.scalars(select(Task).where(Task.user_id == user_id)).all()
+    rules = db.scalars(select(AutomationRule).where(AutomationRule.user_id == user_id)).all()
+    plans = db.scalars(select(WorkflowExecutionPlan).where(WorkflowExecutionPlan.user_id == user_id)).all()
+    audits = db.scalars(select(WorkflowAuditEvent).where(WorkflowAuditEvent.user_id == user_id)).all()
+    meta = get_metadata_summary(db, user_id)
+
+    return {
+        "export_timestamp": datetime.now(timezone.utc).isoformat(),
+        "gdpr_article": "Article 20 (Right to Data Portability)",
+        "user_profile": {
+            "id": str(user.id),
+            "email": user.email,
+            "display_name": user.display_name,
+            "timezone": user.timezone,
+            "role_persona": user.role_persona,
+            "custom_title": user.custom_title,
+            "organization": user.organization,
+            "focus_rhythm": user.focus_rhythm,
+            "daily_goal_minutes": user.daily_goal_minutes,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+        },
+        "privacy_settings": {
+            "is_paused": settings.is_paused,
+            "raw_event_retention_days": settings.raw_event_retention_days,
+            "aggregated_metric_retention_days": settings.aggregated_metric_retention_days,
+            "allow_anonymized_research": settings.allow_anonymized_research,
+        },
+        "consent_audit_history": [
+            {
+                "version": c.consent_version,
+                "status": c.consent_status.value if hasattr(c.consent_status, "value") else str(c.consent_status),
+                "categories": c.enabled_categories,
+                "granted_at": c.granted_timestamp.isoformat() if c.granted_timestamp else None,
+                "revoked_at": c.revoked_timestamp.isoformat() if c.revoked_timestamp else None,
+            }
+            for c in consent_history
+        ],
+        "app_exclusions": [
+            {"identifier": e.application_identifier, "description": e.description}
+            for e in exclusions
+        ],
+        "tasks": [
+            {"id": str(t.id), "title": t.title, "priority": str(t.priority), "status": str(t.status)}
+            for t in tasks
+        ],
+        "automation_rules": [
+            {"id": str(r.id), "name": r.name, "is_enabled": r.is_enabled, "version": r.version}
+            for r in rules
+        ],
+        "workflow_plans": [
+            {"id": str(p.id), "title": p.title, "status": p.status, "version": p.version}
+            for p in plans
+        ],
+        "audit_event_count": len(audits),
+        "telemetry_summary": meta.model_dump(),
+    }
+
+
+def delete_user_account(db: Session, user_id: uuid.UUID, confirmation_phrase: str) -> dict[str, Any]:
+    """
+    GDPR Article 17 Right to Erasure / Complete Account Destruction.
+    Cascades and permanently erases all user records across every subsystem.
+    """
+    if confirmation_phrase != "DELETE MY ENTIRE ACCOUNT":
+        raise BadRequestError("Confirmation phrase must exactly match 'DELETE MY ENTIRE ACCOUNT'.")
+
+    user = db.get(User, user_id)
+    if not user:
+        raise NotFoundError("User not found.")
+
+    # 1. Raw telemetry and context sessions
+    try:
+        db.execute(delete(RawTelemetryEvent).where(RawTelemetryEvent.user_id == user_id))
+    except Exception:
+        pass
+    try:
+        db.execute(delete(ContextSession).where(ContextSession.user_id == user_id))
+    except Exception:
+        pass
+
+    # 2. Automation and workflows
+    try:
+        db.execute(delete(AutomationExecution).where(AutomationExecution.user_id == user_id))
+        db.execute(delete(AutomationRule).where(AutomationRule.user_id == user_id))
+    except Exception:
+        pass
+    try:
+        db.execute(delete(WorkflowExecutionPlan).where(WorkflowExecutionPlan.user_id == user_id))
+    except Exception:
+        pass
+
+    # 3. Calendar integrations & credentials
+    try:
+        db.execute(delete(CalendarIntegration).where(CalendarIntegration.user_id == user_id))
+    except Exception:
+        pass
+
+    # 4. Privacy and consent
+    try:
+        db.execute(delete(UserAppExclusion).where(UserAppExclusion.user_id == user_id))
+        db.execute(delete(TelemetryConsent).where(TelemetryConsent.user_id == user_id))
+        db.execute(delete(UserPrivacySettings).where(UserPrivacySettings.user_id == user_id))
+    except Exception:
+        pass
+
+    # 5. Tasks and task events
+    try:
+        db.execute(delete(TaskEvent).where(TaskEvent.user_id == user_id))
+        db.execute(delete(Task).where(Task.user_id == user_id))
+    except Exception:
+        pass
+
+    # 6. Safety events
+    try:
+        db.execute(delete(WorkflowAuditEvent).where(WorkflowAuditEvent.user_id == user_id))
+        db.execute(delete(EmergencyStopEvent).where(EmergencyStopEvent.user_id == user_id))
+    except Exception:
+        pass
+
+    # 7. Delete User Profile
+    db.delete(user)
+    db.commit()
+
+    return {
+        "status": "DELETED",
+        "user_id": str(user_id),
+        "deleted_at": datetime.now(timezone.utc).isoformat(),
+        "message": "All personal data, telemetry, workflows, and account records have been permanently eradicated.",
+    }

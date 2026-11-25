@@ -39,6 +39,15 @@ DEFAULT_GLOBAL_DENYLIST: Set[str] = {
     "vpn.exe",
 }
 
+# Explicitly prohibited surveillance data fields
+PROHIBITED_SURVEILLANCE_FIELDS: Set[str] = {
+    "keystroke", "keystrokes", "keylog", "keylogger", "typed_text", "keys_pressed",
+    "screenshot", "screen_capture", "image_data", "screen_image", "frame_buffer",
+    "clipboard", "clipboard_text", "clipboard_content",
+    "message_body", "chat_text", "sms_content", "email_body", "private_message",
+    "file_content", "document_text", "file_body", "buffer_contents",
+}
+
 
 class AgentPrivacyGuard:
     """
@@ -103,6 +112,8 @@ class AgentPrivacyGuard:
         clean = raw_title
         clean = PATH_REGEX.sub(r"\1", clean)
         clean = URL_PARAM_REGEX.sub(r"\1", clean)
+        clean = re.sub(r"\?[^\s]+", "", clean)
+        clean = re.sub(r"(token|secret|password|key)[=:\s]+[^\s,;]+", r"\1=[REDACTED]", clean, flags=re.IGNORECASE)
         clean = EMAIL_REGEX.sub("[EMAIL]", clean)
         clean = CREDIT_CARD_REGEX.sub("[REDACTED_CARD]", clean)
         clean = SSN_REGEX.sub("[REDACTED_ID]", clean)
@@ -128,7 +139,13 @@ class AgentPrivacyGuard:
 
         clean_process = process_name.lower().strip()
 
-        # 2. Application exclusion handling (Task 4)
+        # 2. Rejection of prohibited surveillance payloads
+        lower_title = raw_title.lower() if raw_title else ""
+        for prohibited in PROHIBITED_SURVEILLANCE_FIELDS:
+            if prohibited in lower_title or prohibited in clean_process:
+                return None
+
+        # 3. Application exclusion handling (Task 4)
         if self.is_application_excluded(clean_process):
             # When an excluded app is active:
             # - Do not record its identity.
