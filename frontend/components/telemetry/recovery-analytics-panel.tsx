@@ -27,13 +27,16 @@ import type {
   BehavioralFrictionData,
   InterruptionTrendPoint,
   PersonalBaselineData,
+  RecoveryPredictionData,
 } from "@/types/telemetry";
+import { RecoveryPredictionCard } from "./recovery-prediction-card";
 
 interface RecoveryAnalyticsPanelProps {
   recovery: RecoveryAnalyticsData | null;
   friction: BehavioralFrictionData | null;
   trends: InterruptionTrendPoint[];
   baseline: PersonalBaselineData | null;
+  prediction?: RecoveryPredictionData | null;
   loading?: boolean;
 }
 
@@ -42,6 +45,7 @@ export function RecoveryAnalyticsPanel({
   friction,
   trends,
   baseline,
+  prediction,
   loading,
 }: RecoveryAnalyticsPanelProps) {
   const getFrictionTierBadge = (tier: string = "MODERATE") => {
@@ -66,6 +70,9 @@ export function RecoveryAnalyticsPanel({
 
   return (
     <div className="space-y-4">
+      {/* Phase 6.2 Cognitive Recovery Duration Forecast */}
+      <RecoveryPredictionCard prediction={prediction ?? null} loading={loading} />
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* 1. Behavioral Friction Index (BFI) */}
         <Card className="border border-border/80 shadow-xs md:col-span-1">

@@ -173,3 +173,31 @@ def get_task_survival_curve(
         return resp.survival_estimates
 
     return [SurvivalEstimatePoint(**pt) for pt in p.predicted_value["survival_estimates"]]
+
+
+@router.get("/recovery")
+def predict_recovery_duration_endpoint(
+    task_id: Optional[uuid.UUID] = Query(default=None),
+    interruption_id: Optional[uuid.UUID] = Query(default=None),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Predicts cognitive recovery duration and resumption probabilities."""
+    from app.schemas.recovery_prediction import RecoveryPredictionRequest
+    from app.services.recovery_prediction_service import RecoveryPredictionService
+    req = RecoveryPredictionRequest(user_id=user_id, task_id=task_id, interruption_id=interruption_id)
+    return RecoveryPredictionService.predict_recovery_duration(db=db, user_id=user_id, request=req)
+
+
+@router.post("/recovery")
+def predict_recovery_duration_custom_endpoint(
+    payload: Optional[dict] = None,
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Predicts cognitive recovery duration for custom context parameters."""
+    from app.schemas.recovery_prediction import RecoveryPredictionRequest
+    from app.services.recovery_prediction_service import RecoveryPredictionService
+    req = RecoveryPredictionRequest(**(payload or {}))
+    return RecoveryPredictionService.predict_recovery_duration(db=db, user_id=user_id, request=req)
+

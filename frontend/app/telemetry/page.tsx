@@ -32,6 +32,7 @@ import type {
   InterruptionTrendPoint,
   PersonalBaselineData,
   InterruptionFeedbackPayload,
+  RecoveryPredictionData,
 } from "@/types/telemetry";
 
 export default function TelemetryDashboardPage() {
@@ -48,6 +49,7 @@ export default function TelemetryDashboardPage() {
   const [friction, setFriction] = useState<BehavioralFrictionData | null>(null);
   const [trends, setTrends] = useState<InterruptionTrendPoint[]>([]);
   const [baseline, setBaseline] = useState<PersonalBaselineData | null>(null);
+  const [prediction, setPrediction] = useState<RecoveryPredictionData | null>(null);
 
   // Pause action state
   const [isTogglingPause, setIsTogglingPause] = useState(false);
@@ -70,6 +72,7 @@ export default function TelemetryDashboardPage() {
         frictionRes,
         trendsRes,
         baselineRes,
+        predictionRes,
       ] = await Promise.all([
         telemetryApi.getAgentStatus(),
         telemetryApi.getOverview(),
@@ -78,6 +81,7 @@ export default function TelemetryDashboardPage() {
         telemetryApi.getFrictionIndex(),
         telemetryApi.getInterruptionTrends(),
         telemetryApi.getPersonalBaseline(),
+        telemetryApi.getRecoveryPrediction(),
       ]);
 
       if (statusRes.data) setAgentStatus(statusRes.data);
@@ -87,6 +91,7 @@ export default function TelemetryDashboardPage() {
       if (frictionRes.data) setFriction(frictionRes.data);
       if (trendsRes.data) setTrends(trendsRes.data);
       if (baselineRes.data) setBaseline(baselineRes.data);
+      if (predictionRes.data) setPrediction(predictionRes.data);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Failed to load telemetry data";
       setError(message);
@@ -279,6 +284,7 @@ export default function TelemetryDashboardPage() {
             friction={friction}
             trends={trends}
             baseline={baseline}
+            prediction={prediction}
             loading={loading}
           />
         </TabsContent>

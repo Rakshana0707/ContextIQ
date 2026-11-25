@@ -151,3 +151,47 @@ def export_candidate_dataset(
     """
     from app.services.feedback_loop_service import FeedbackLoopService
     return FeedbackLoopService.export_candidate_training_dataset(db=db, user_id=user_id)
+
+
+# ---------------------------------------------------------------------------
+# Phase 6.2 Cognitive Recovery Duration Prediction
+# ---------------------------------------------------------------------------
+
+@router.get("/analytics/recovery/prediction")
+@router.get("/recovery/prediction")
+def get_recovery_prediction(
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    task_id: Optional[uuid.UUID] = Query(default=None),
+    interruption_id: Optional[uuid.UUID] = Query(default=None),
+    db: Session = Depends(get_db),
+):
+    """Predicts cognitive recovery duration and resumption probability for current context."""
+    from app.schemas.recovery_prediction import RecoveryPredictionRequest
+    from app.services.recovery_prediction_service import RecoveryPredictionService
+    req = RecoveryPredictionRequest(user_id=user_id, task_id=task_id, interruption_id=interruption_id)
+    return RecoveryPredictionService.predict_recovery_duration(db=db, user_id=user_id, request=req)
+
+
+@router.post("/analytics/recovery/prediction")
+@router.post("/recovery/prediction")
+def predict_recovery_duration_custom(
+    payload: Optional[dict] = None,
+    user_id: uuid.UUID = Depends(get_current_user_id),
+    db: Session = Depends(get_db),
+):
+    """Predicts cognitive recovery duration for custom context parameters."""
+    from app.schemas.recovery_prediction import RecoveryPredictionRequest
+    from app.services.recovery_prediction_service import RecoveryPredictionService
+    req = RecoveryPredictionRequest(**(payload or {}))
+    return RecoveryPredictionService.predict_recovery_duration(db=db, user_id=user_id, request=req)
+
+
+@router.get("/analytics/recovery/benchmark")
+@router.get("/recovery/benchmark")
+def get_recovery_benchmark_metrics(
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Returns benchmark comparison across the 5 survival/duration modeling approaches."""
+    from app.services.recovery_prediction_service import RecoveryPredictionService
+    return RecoveryPredictionService.get_benchmark_comparison()
+

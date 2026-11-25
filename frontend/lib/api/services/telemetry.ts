@@ -10,6 +10,7 @@ import type {
   InterruptionTrendPoint,
   PersonalBaselineData,
   DailyTelemetryOverview,
+  RecoveryPredictionData,
 } from "@/types/telemetry";
 
 // ---------------------------------------------------------------------------
@@ -158,6 +159,52 @@ const mockBaseline: PersonalBaselineData = {
   baseline_tier: "ELEVATED",
 };
 
+const mockRecoveryPrediction: RecoveryPredictionData = {
+  user_id: "user-default-01",
+  prediction_timestamp: new Date().toISOString(),
+  estimated_recovery_duration_seconds: 480.0,
+  estimated_recovery_duration_minutes: 8.0,
+  median_recovery_duration_minutes: 7.5,
+  recovery_probabilities: {
+    "5m": 0.32,
+    "15m": 0.74,
+    "30m": 0.91,
+    "60m": 0.98,
+  },
+  confidence_interval: {
+    lower_seconds: 310.0,
+    upper_seconds: 720.0,
+    lower_minutes: 5.17,
+    upper_minutes: 12.0,
+    confidence_level: 0.90,
+  },
+  confidence_tier: "ESTABLISHED",
+  is_personalized: true,
+  model_version: "rec_lognormal_aft_v1.0.0",
+  main_contributing_factors: [
+    {
+      feature_name: "interruption_severity",
+      impact_minutes: 2.8,
+      direction: "INCREASES_RECOVERY",
+      explanation: "Elevated severity (HIGH) requires more working memory reconstitution.",
+    },
+    {
+      feature_name: "task_category",
+      impact_minutes: 2.1,
+      direction: "INCREASES_RECOVERY",
+      explanation: "Complex context (DeepWork) demands reloading multi-file mental models.",
+    },
+    {
+      feature_name: "circadian_window",
+      impact_minutes: -1.8,
+      direction: "DECREASES_RECOVERY",
+      explanation: "Morning peak focus window accelerates cognitive recovery speed.",
+    },
+  ],
+  disclaimer: "Estimates reflect empirical behavioral re-engagement delays, not neurological exhaustion.",
+};
+
+
 // ---------------------------------------------------------------------------
 // Service Interface & Implementation
 // ---------------------------------------------------------------------------
@@ -175,6 +222,7 @@ export interface TelemetryApi {
   getFrictionIndex(): Promise<ApiResult<BehavioralFrictionData>>;
   getInterruptionTrends(): Promise<ApiResult<InterruptionTrendPoint[]>>;
   getPersonalBaseline(): Promise<ApiResult<PersonalBaselineData>>;
+  getRecoveryPrediction(taskId?: string, interruptionId?: string): Promise<ApiResult<RecoveryPredictionData>>;
   pauseAgent(durationMinutes?: number): Promise<ApiResult<{ status: string }>>;
   resumeAgent(): Promise<ApiResult<{ status: string }>>;
 }
@@ -197,6 +245,7 @@ const mockTelemetryApi: TelemetryApi = {
   getFrictionIndex: async () => mockResult(() => mockFriction),
   getInterruptionTrends: async () => mockResult(() => mockTrends),
   getPersonalBaseline: async () => mockResult(() => mockBaseline),
+  getRecoveryPrediction: async () => mockResult(() => mockRecoveryPrediction),
   pauseAgent: async () =>
     mockResult(() => {
       mockAgentStatus.is_paused = true;
@@ -324,6 +373,21 @@ const liveTelemetryApi: TelemetryApi = {
       // offline fallback
     }
     return mockResult(() => mockBaseline);
+  },
+  getRecoveryPrediction: async (taskId?: string, interruptionId?: string) => {
+    try {
+      const query: Record<string, string> = {};
+      if (taskId) query.task_id = taskId;
+      if (interruptionId) query.interruption_id = interruptionId;
+      const res = await apiClient.request<RecoveryPredictionData>("/analytics/recovery/prediction", {
+        query,
+        baseUrl: "core",
+      });
+      if (res.data) return res;
+    } catch {
+      // offline fallback
+    }
+    return mockResult(() => mockRecoveryPrediction);
   },
   pauseAgent: async (durationMinutes = 60) => {
     try {

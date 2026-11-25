@@ -44,7 +44,11 @@ from app.models.user_device import UserDevice  # noqa: F401
 from app.models.location_checkin import LocationCheckIn  # noqa: F401
 from app.models.location_routine_association import LocationRoutineAssociation  # noqa: F401
 
+from app.models.enums import RecoveryState  # noqa: F401
+
 __all__ = [
+    "RecoveryState",
+
     "User",
     "Location",
     "Task",

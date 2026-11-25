@@ -141,3 +141,34 @@ export interface DailyTelemetryOverview {
   sync_status: "HEALTHY" | "DEGRADED" | "DISCONNECTED";
   last_sync_timestamp: string | null;
 }
+
+export interface RecoveryContributingFactorItem {
+  feature_name: string;
+  impact_minutes: number;
+  direction: "INCREASES_RECOVERY" | "DECREASES_RECOVERY";
+  explanation: string;
+}
+
+export interface RecoveryPredictionIntervalData {
+  lower_seconds: number;
+  upper_seconds: number;
+  lower_minutes: number;
+  upper_minutes: number;
+  confidence_level: number;
+}
+
+export interface RecoveryPredictionData {
+  user_id: string;
+  prediction_timestamp: string;
+  estimated_recovery_duration_seconds: number;
+  estimated_recovery_duration_minutes: number;
+  median_recovery_duration_minutes: number;
+  recovery_probabilities: Record<string, number>;
+  confidence_interval: RecoveryPredictionIntervalData;
+  confidence_tier: "COLD_START" | "EMERGING" | "ESTABLISHED" | "CONFIDENT";
+  is_personalized: boolean;
+  model_version: string;
+  main_contributing_factors: RecoveryContributingFactorItem[];
+  disclaimer: string;
+}
+
