@@ -5,8 +5,11 @@ import { AppShell } from "@/components/layout/app-shell";
 import { RuleList } from "@/components/automations/rule-list";
 import { RuleEditorModal } from "@/components/automations/rule-editor-modal";
 import { ExecutionHistoryTable } from "@/components/automations/execution-history-table";
+import { ProactiveFeedList } from "@/components/proactive/proactive-feed-list";
 import { automationsApi } from "@/lib/api/services/automations";
+import { proactiveApi } from "@/lib/api/services/proactive";
 import type { AutomationRule, AutomationExecution } from "@/types/automations";
+import type { ProactiveFeedItem } from "@/types/proactive";
 import {
   Sparkles,
   Plus,
@@ -18,18 +21,20 @@ import {
   CheckCircle2,
   Clock,
   RefreshCw,
+  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export default function AutomationCenterPage() {
   const [rules, setRules] = useState<AutomationRule[]>([]);
   const [executions, setExecutions] = useState<AutomationExecution[]>([]);
+  const [feedItems, setFeedItems] = useState<ProactiveFeedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRule, setEditingRule] = useState<AutomationRule | null>(null);
-  const [activeTab, setActiveTab] = useState<"rules" | "history">("rules");
+  const [activeTab, setActiveTab] = useState<"feed" | "rules" | "history">("feed");
 
   // Dry run state
   const [dryRunLoading, setDryRunLoading] = useState(false);
@@ -39,14 +44,16 @@ export default function AutomationCenterPage() {
     setLoading(true);
     setError(null);
     try {
-      const [rulesData, execData] = await Promise.all([
+      const [rulesData, execData, feedData] = await Promise.all([
         automationsApi.listRules(),
         automationsApi.listExecutions(),
+        proactiveApi.getFeed(),
       ]);
       setRules(rulesData);
       setExecutions(execData);
+      setFeedItems(feedData);
     } catch (err: any) {
-      setError(err?.message || "Failed to load automation rules");
+      setError(err?.message || "Failed to load automation data");
     } finally {
       setLoading(false);
     }
@@ -83,6 +90,8 @@ export default function AutomationCenterPage() {
       const created = await automationsApi.createRule(payload);
       setRules((prev) => [created, ...prev]);
     }
+    setIsModalOpen(false);
+    setEditingRule(null);
   };
 
   const handleSimulateTrigger = async () => {
@@ -91,37 +100,77 @@ export default function AutomationCenterPage() {
     try {
       const res = await automationsApi.evaluateTrigger("FORGETTING_THRESHOLD_EXCEEDED", {
         forgetting_risk: { probability: 0.78 },
-        task: { priority: "HIGH", title: "Quarterly Systems Audit" },
+        task: { priority: "HIGH" },
       });
       setDryRunResult(res);
-      // reload executions
-      const execs = await automationsApi.listExecutions();
-      setExecutions(execs);
+      const updatedExecs = await automationsApi.listExecutions();
+      setExecutions(updatedExecs);
     } catch (err) {
-      console.error("Simulation error:", err);
+      console.error("Dry run evaluation error:", err);
     } finally {
       setDryRunLoading(false);
     }
   };
 
+  // Proactive Feed action handlers
+  const handleApproveFeedItem = async (id: string) => {
+    try {
+      const updated = await proactiveApi.respondToFeedItem(id, "APPROVE");
+      setFeedItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
+      const updatedExecs = await automationsApi.listExecutions();
+      setExecutions(updatedExecs);
+    } catch (err) {
+      console.error("Approve feed item error:", err);
+    }
+  };
+
+  const handleSnoozeFeedItem = async (id: string, minutes: number) => {
+    try {
+      const updated = await proactiveApi.respondToFeedItem(id, "SNOOZE", minutes);
+      setFeedItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
+    } catch (err) {
+      console.error("Snooze feed item error:", err);
+    }
+  };
+
+  const handleDismissFeedItem = async (id: string) => {
+    try {
+      const updated = await proactiveApi.respondToFeedItem(id, "DISMISS");
+      setFeedItems((prev) => prev.map((item) => (item.id === id ? updated : item)));
+    } catch (err) {
+      console.error("Dismiss feed item error:", err);
+    }
+  };
+
+  const handleSimulateDetection = async (detectionType: string) => {
+    try {
+      await proactiveApi.simulateDetection(detectionType);
+      const updatedFeed = await proactiveApi.getFeed();
+      setFeedItems(updatedFeed);
+    } catch (err) {
+      console.error("Simulate detection error:", err);
+    }
+  };
+
   const activeCount = rules.filter((r) => r.is_enabled).length;
+  const activeFeedCount = feedItems.filter((f) => f.status === "ACTIVE").length;
 
   return (
     <AppShell>
-      <div className="space-y-6 pb-12">
-        {/* Header Section */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/70 pb-5">
-          <div>
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Top Header */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/80 pb-5">
+          <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <span className="p-2 rounded-xl bg-gradient-to-br from-indigo-500 via-indigo-600 to-violet-700 text-white shadow-md shadow-indigo-500/20">
+              <div className="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-500">
                 <Sparkles className="h-5 w-5" />
-              </span>
+              </div>
               <div>
                 <h1 className="text-xl font-extrabold text-foreground tracking-tight">
-                  Automation Center
+                  Automation & Proactive Intelligence Center
                 </h1>
                 <p className="text-xs text-muted-foreground">
-                  User-defined proactive behavioral rules, triggers, and governed execution contracts.
+                  Event-driven behavioral intelligence, governed execution workflows, and proactive interventions.
                 </p>
               </div>
             </div>
@@ -156,11 +205,11 @@ export default function AutomationCenterPage() {
         {/* Metric Summary Ribbon */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           <div className="p-3.5 rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground block">
-              Configured Rules
+            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-cyan-600 dark:text-cyan-400 block">
+              Active Intelligence Alerts
             </span>
-            <div className="text-xl font-extrabold text-foreground mt-0.5">
-              {rules.length}
+            <div className="text-xl font-extrabold text-cyan-600 dark:text-cyan-400 mt-0.5">
+              {activeFeedCount}
             </div>
           </div>
 
@@ -169,7 +218,7 @@ export default function AutomationCenterPage() {
               Active Rules
             </span>
             <div className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 mt-0.5">
-              {activeCount}
+              {activeCount} / {rules.length}
             </div>
           </div>
 
@@ -184,9 +233,9 @@ export default function AutomationCenterPage() {
 
           <div className="p-3.5 rounded-xl border border-border/80 bg-card/60 backdrop-blur-sm">
             <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-muted-foreground block">
-              Approval Policy
+              Safety Boundary
             </span>
-            <div className="text-xs font-semibold text-foreground mt-1 flex items-center gap-1">
+            <div className="text-xs font-semibold text-foreground mt-1 flex items-center gap-1.5">
               <ShieldCheck className="h-4 w-4 text-emerald-500" /> Governed Tiers
             </div>
           </div>
@@ -213,6 +262,19 @@ export default function AutomationCenterPage() {
         {/* Tab Controls */}
         <div className="flex items-center justify-between border-b border-border/70">
           <div className="flex items-center gap-1">
+            <button
+              type="button"
+              onClick={() => setActiveTab("feed")}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
+                activeTab === "feed"
+                  ? "border-cyan-600 text-cyan-600 dark:text-cyan-400 font-bold"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Bell className="h-3.5 w-3.5" />
+              Proactive Feed ({activeFeedCount})
+            </button>
+
             <button
               type="button"
               onClick={() => setActiveTab("rules")}
@@ -254,12 +316,22 @@ export default function AutomationCenterPage() {
         {loading ? (
           <div className="py-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
             <RefreshCw className="h-4 w-4 animate-spin text-indigo-500" />
-            Loading automation rules...
+            Loading automation and behavioral data...
           </div>
         ) : error ? (
           <div className="p-4 rounded-xl border border-rose-500/30 bg-rose-50/50 dark:bg-rose-950/20 text-xs text-rose-600 dark:text-rose-400">
             {error}
           </div>
+        ) : activeTab === "feed" ? (
+          <ProactiveFeedList
+            items={feedItems}
+            loading={loading}
+            onRefresh={loadData}
+            onApprove={handleApproveFeedItem}
+            onSnooze={handleSnoozeFeedItem}
+            onDismiss={handleDismissFeedItem}
+            onSimulate={handleSimulateDetection}
+          />
         ) : activeTab === "rules" ? (
           <RuleList
             rules={rules}

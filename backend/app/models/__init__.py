@@ -52,6 +52,11 @@ from app.models.automation_rule import (  # noqa: F401
     AutomationExecution,
     AutomationRuleVersion,
 )
+from app.models.event_models import (
+    StandardEventRecord,
+    DeadLetterEventRecord,
+    ProactiveFeedItem,
+)
 
 from app.models.enums import RecoveryState  # noqa: F401
 
@@ -105,6 +110,9 @@ __all__ = [
     "AutomationActionDefinition",
     "AutomationExecution",
     "AutomationRuleVersion",
+    "StandardEventRecord",
+    "DeadLetterEventRecord",
+    "ProactiveFeedItem",
 ]
 
 
