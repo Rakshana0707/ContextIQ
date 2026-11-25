@@ -270,5 +270,37 @@ def get_sequence_benchmark_analytics(
     return SequencePredictionService.get_or_run_benchmark(target=SequencePredictionTarget(target))
 
 
+@router.get("/analytics/survival/predict")
+def predict_survival_analytics(
+    target: str = "task_abandonment",
+    current_time_elapsed: float = 0.0,
+    db: Session = Depends(get_db),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Forecasts conditional survival curve via analytics router."""
+    from app.schemas.dynamic_survival import DynamicSurvivalPredictionRequest, SurvivalEventTarget
+    from app.services.dynamic_survival_service import DynamicSurvivalService
+
+    req = DynamicSurvivalPredictionRequest(
+        target=SurvivalEventTarget(target),
+        user_id=user_id,
+        current_time_elapsed=current_time_elapsed,
+    )
+    return DynamicSurvivalService.predict_survival(db=db, request=req)
+
+
+@router.get("/analytics/survival/benchmark")
+def get_survival_benchmark_analytics(
+    target: str = "task_abandonment",
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Retrieves candidate survival model benchmark via analytics router."""
+    from app.schemas.dynamic_survival import SurvivalEventTarget
+    from app.services.dynamic_survival_service import DynamicSurvivalService
+
+    return DynamicSurvivalService.get_or_run_benchmark(target=SurvivalEventTarget(target))
+
+
+
 
 

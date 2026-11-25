@@ -31,6 +31,7 @@ import type {
 } from "@/types/telemetry";
 import { RecoveryPredictionCard } from "./recovery-prediction-card";
 import { SequencePredictionCard } from "./sequence-prediction-card";
+import { DynamicSurvivalCard } from "./dynamic-survival-card";
 
 interface RecoveryAnalyticsPanelProps {
   recovery: RecoveryAnalyticsData | null;
@@ -264,6 +265,9 @@ export function RecoveryAnalyticsPanel({
 
       {/* Phase 6.5: Temporal Behavioral Sequence Modeling & Benchmarking */}
       <SequencePredictionCard />
+
+      {/* Phase 6.6: Personalized Survival & Dynamic Risk Modeling */}
+      <DynamicSurvivalCard />
     </div>
   );
 }
