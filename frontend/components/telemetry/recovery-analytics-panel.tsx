@@ -32,6 +32,7 @@ import type {
 import { RecoveryPredictionCard } from "./recovery-prediction-card";
 import { SequencePredictionCard } from "./sequence-prediction-card";
 import { DynamicSurvivalCard } from "./dynamic-survival-card";
+import { MultiObjectiveOptimizationCard } from "./multi-objective-optimization-card";
 
 interface RecoveryAnalyticsPanelProps {
   recovery: RecoveryAnalyticsData | null;
@@ -268,6 +269,9 @@ export function RecoveryAnalyticsPanel({
 
       {/* Phase 6.6: Personalized Survival & Dynamic Risk Modeling */}
       <DynamicSurvivalCard />
+
+      {/* Phase 6.7: Multi-Objective Intervention Optimization */}
+      <MultiObjectiveOptimizationCard />
     </div>
   );
 }

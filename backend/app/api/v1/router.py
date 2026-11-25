@@ -22,6 +22,7 @@ from app.api.v1.causal import router as causal_router
 from app.api.v1.counterfactual import router as counterfactual_router
 from app.api.v1.sequence_prediction import router as sequence_router
 from app.api.v1.survival import router as survival_router
+from app.api.v1.multi_objective import router as multi_objective_router
 
 api_router = APIRouter()
 
@@ -47,4 +48,5 @@ api_router.include_router(causal_router)
 api_router.include_router(counterfactual_router)
 api_router.include_router(sequence_router)
 api_router.include_router(survival_router)
+api_router.include_router(multi_objective_router)
 

@@ -301,6 +301,24 @@ def get_survival_benchmark_analytics(
     return DynamicSurvivalService.get_or_run_benchmark(target=SurvivalEventTarget(target))
 
 
+@router.get("/analytics/optimization/optimize")
+def optimize_intervention_analytics(
+    task_id: Optional[uuid.UUID] = None,
+    db: Session = Depends(get_db),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Executes multi-objective optimization via analytics router."""
+    from app.schemas.multi_objective_optimization import MultiObjectiveOptimizationRequest
+    from app.services.multi_objective_service import MultiObjectiveService
+
+    req = MultiObjectiveOptimizationRequest(
+        user_id=user_id,
+        task_id=task_id,
+    )
+    return MultiObjectiveService.optimize_intervention(db=db, request=req)
+
+
+
 
 
 
