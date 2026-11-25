@@ -107,6 +107,12 @@ export const navItems: NavItem[] = [
     icon: Calendar,
     description: "Google Calendar & Outlook synchronization",
   },
+  {
+    href: "/automations",
+    label: "Automation Center",
+    icon: Zap,
+    description: "User-defined proactive rules, triggers & governed actions",
+  },
 ];
 
 export const adaptiveNavItems: NavItem[] = [

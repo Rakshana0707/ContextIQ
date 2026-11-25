@@ -5,6 +5,7 @@ Domain code should raise the exceptions defined here rather than raw
 HTTPException, so error responses stay consistent and easy to test.
 """
 from fastapi import FastAPI, Request, status
+from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
@@ -68,7 +69,7 @@ def register_exception_handlers(app: FastAPI) -> None:
         return JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             content=_error_body("Validation failed.", "ValidationError")
-            | {"details": exc.errors()},
+            | {"details": jsonable_encoder(exc.errors())},
         )
 
     @app.exception_handler(IntegrityError)
