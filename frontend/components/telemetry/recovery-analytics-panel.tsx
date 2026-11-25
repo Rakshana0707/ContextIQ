@@ -33,6 +33,7 @@ import { RecoveryPredictionCard } from "./recovery-prediction-card";
 import { SequencePredictionCard } from "./sequence-prediction-card";
 import { DynamicSurvivalCard } from "./dynamic-survival-card";
 import { MultiObjectiveOptimizationCard } from "./multi-objective-optimization-card";
+import { UncertaintyAbstentionCard } from "./uncertainty-abstention-card";
 
 interface RecoveryAnalyticsPanelProps {
   recovery: RecoveryAnalyticsData | null;
@@ -272,6 +273,9 @@ export function RecoveryAnalyticsPanel({
 
       {/* Phase 6.7: Multi-Objective Intervention Optimization */}
       <MultiObjectiveOptimizationCard />
+
+      {/* Phase 6.8: Uncertainty-Aware Decision Support & Intelligent Abstention */}
+      <UncertaintyAbstentionCard />
     </div>
   );
 }

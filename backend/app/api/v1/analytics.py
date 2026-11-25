@@ -318,6 +318,36 @@ def optimize_intervention_analytics(
     return MultiObjectiveService.optimize_intervention(db=db, request=req)
 
 
+@router.get("/analytics/uncertainty/evaluate")
+def evaluate_uncertainty_analytics(
+    task_id: Optional[uuid.UUID] = None,
+    model_target: str = "forgetting_risk",
+    db: Session = Depends(get_db),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Evaluates prediction uncertainty and abstention status via analytics router."""
+    from app.schemas.uncertainty_decision import DecisionSupportRequest
+    from app.services.uncertainty_decision_service import UncertaintyDecisionService
+
+    req = DecisionSupportRequest(
+        user_id=user_id,
+        task_id=task_id,
+        model_target=model_target,
+    )
+    return UncertaintyDecisionService.evaluate_decision_support(db=db, request=req)
+
+
+@router.get("/analytics/uncertainty/audit")
+def audit_uncertainty_analytics(
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Audits uncertainty exposure across all 7 model families via analytics router."""
+    from app.services.uncertainty_decision_service import UncertaintyDecisionService
+
+    return UncertaintyDecisionService.audit_all_models()
+
+
+
 
 
 
