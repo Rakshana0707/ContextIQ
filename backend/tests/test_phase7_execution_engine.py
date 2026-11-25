@@ -31,6 +31,8 @@ from app.schemas.workflow_schemas import (
     WorkflowStepSchema,
 )
 from app.services.action_handlers import ActionHandlers, ActionResult
+from app.services.policy_engine import PolicyEngine
+from app.schemas.policy_schemas import PermissionScope
 from app.services.workflow_execution_engine import (
     ApprovalVerificationError,
     DuplicateExecutionError,
@@ -65,6 +67,19 @@ def test_user(db_session):
     db_session.add(u)
     db_session.commit()
     db_session.refresh(u)
+
+    for scope in [
+        PermissionScope.TASKS_READ,
+        PermissionScope.TASKS_WRITE,
+        PermissionScope.CALENDAR_READ,
+        PermissionScope.CALENDAR_EVENTS_CREATE,
+        PermissionScope.CALENDAR_EVENTS_MODIFY,
+        PermissionScope.NOTIFICATIONS_SEND,
+        PermissionScope.AUTOMATION_SCHEDULE_RUN,
+        PermissionScope.WORKFLOWS_EXECUTE,
+    ]:
+        PolicyEngine.grant_scope(db_session, u.id, scope)
+
     return u
 
 

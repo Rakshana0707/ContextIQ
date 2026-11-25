@@ -8,6 +8,7 @@ import { ExecutionHistoryTable } from "@/components/automations/execution-histor
 import { ProactiveFeedList } from "@/components/proactive/proactive-feed-list";
 import { WorkflowPlanList } from "@/components/workflows/workflow-plan-list";
 import { WorkflowPreviewModal } from "@/components/workflows/workflow-preview-modal";
+import { PolicyCenterView } from "@/components/policy/policy-center-view";
 import { automationsApi } from "@/lib/api/services/automations";
 import { proactiveApi } from "@/lib/api/services/proactive";
 import { workflowsApi } from "@/lib/api/services/workflows";
@@ -27,6 +28,7 @@ import {
   RefreshCw,
   Bell,
   GitBranch,
+  Shield,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -45,7 +47,7 @@ export default function AutomationCenterPage() {
   const [selectedPlan, setSelectedPlan] = useState<WorkflowExecutionPlan | null>(null);
   const [isPlanModalOpen, setIsPlanModalOpen] = useState(false);
 
-  const [activeTab, setActiveTab] = useState<"feed" | "workflows" | "rules" | "history">("workflows");
+  const [activeTab, setActiveTab] = useState<"feed" | "workflows" | "rules" | "history" | "policy">("workflows");
 
   // Dry run state
   const [dryRunLoading, setDryRunLoading] = useState(false);
@@ -367,6 +369,19 @@ export default function AutomationCenterPage() {
               <History className="h-3.5 w-3.5" />
               Execution & Audit History ({executions.length})
             </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("policy")}
+              className={`flex items-center gap-1.5 px-4 py-2.5 text-xs font-semibold border-b-2 transition-colors ${
+                activeTab === "policy"
+                  ? "border-indigo-600 text-indigo-600 dark:text-indigo-400 font-bold"
+                  : "border-transparent text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Shield className="h-3.5 w-3.5 text-indigo-400" />
+              Permissions & Policy
+            </button>
           </div>
 
           <Button
@@ -420,6 +435,8 @@ export default function AutomationCenterPage() {
             }}
             onDelete={handleDelete}
           />
+        ) : activeTab === "policy" ? (
+          <PolicyCenterView />
         ) : (
           <ExecutionHistoryTable executions={executions} />
         )}

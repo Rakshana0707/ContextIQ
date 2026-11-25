@@ -32,6 +32,7 @@ from app.schemas.workflow_schemas import (
     WorkflowStepSchema,
 )
 from app.services.action_handlers import ActionHandlers, ActionResult
+from app.services.policy_engine import PolicyEngine
 from app.services.workflow_validator import WorkflowValidator
 
 logger = logging.getLogger(__name__)
@@ -279,6 +280,30 @@ class WorkflowExecutionEngine:
             step_exec.status = "EXECUTING"
             step_exec.started_at = datetime.now(timezone.utc)
             db.commit()
+
+        # Deterministic Policy & Consent check prior to execution
+        policy_eval = PolicyEngine.evaluate_action_policy(
+            db=db,
+            user_id=user_id,
+            action_identifier=step.action_identifier,
+            parameters=step.parameters,
+            context={"plan_id": str(plan_id), "step_key": step.step_key, "is_approved": True, "is_executing": True},
+        )
+        if not policy_eval.allowed:
+            step_exec.status = "BLOCKED_BY_POLICY"
+            step_exec.error_message = f"Policy violation: {policy_eval.denial_reason}"
+            step_exec.error_details = {
+                "scope_required": policy_eval.scope_required.value if policy_eval.scope_required else None,
+                "risk_tier": policy_eval.risk_tier.value if policy_eval.risk_tier else None,
+            }
+            step_exec.completed_at = datetime.now(timezone.utc)
+            db.commit()
+            return ActionResult(
+                success=False,
+                output_payload=step_exec.error_details or {},
+                is_retriable=False,
+                error_message=step_exec.error_message,
+            ), step_exec
 
         # Retry loop
         last_result: Optional[ActionResult] = None

@@ -65,6 +65,10 @@ from app.models.workflow_models import (
     WorkflowStepExecution,
     WorkflowPlanVersion,
 )
+from app.models.policy_models import (
+    UserPolicyConsent,
+    PolicyAuditTrail,
+)
 
 from app.models.enums import RecoveryState  # noqa: F401
 
@@ -127,6 +131,8 @@ __all__ = [
     "WorkflowExecutionPlan",
     "WorkflowStepExecution",
     "WorkflowPlanVersion",
+    "UserPolicyConsent",
+    "PolicyAuditTrail",
 ]
 
 
