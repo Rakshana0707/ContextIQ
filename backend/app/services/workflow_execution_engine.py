@@ -31,8 +31,10 @@ from app.schemas.workflow_schemas import (
     WorkflowLifecycleState,
     WorkflowStepSchema,
 )
+from app.schemas.safety_schemas import AuditEventType
 from app.services.action_handlers import ActionHandlers, ActionResult
 from app.services.policy_engine import PolicyEngine
+from app.services.safety_engine import AuditLogger, EmergencyStopEngine, RollbackManager
 from app.services.workflow_validator import WorkflowValidator
 
 logger = logging.getLogger(__name__)
@@ -47,6 +49,10 @@ class ApprovalVerificationError(ExecutionEngineError):
 
 
 class DuplicateExecutionError(ExecutionEngineError):
+    pass
+
+
+class EmergencyStopActiveError(ExecutionEngineError):
     pass
 
 
@@ -112,6 +118,13 @@ class WorkflowExecutionEngine:
         if not plan:
             raise ValueError(f"Workflow execution plan '{plan_id}' not found.")
 
+        # 0. Emergency Stop & Kill Switch Check
+        is_stopped, stop_event = EmergencyStopEngine.is_emergency_stop_active(db, user_id)
+        if is_stopped and stop_event:
+            raise EmergencyStopActiveError(
+                f"Workflow execution halted: Emergency stop '{stop_event.scope}' is active. Reason: {stop_event.reason}"
+            )
+
         # 1. Approval & Expiration Check
         cls.verify_approval(db, plan, user_id)
 
@@ -157,6 +170,17 @@ class WorkflowExecutionEngine:
             db.refresh(plan)
             if plan.status == WorkflowLifecycleState.CANCELLED.value:
                 logger.info(f"Execution of plan {plan_id} cancelled during processing.")
+                break
+
+            # Check if emergency stop tripped during in-flight execution
+            is_stopped, stop_event = EmergencyStopEngine.is_emergency_stop_active(db, user_id)
+            if is_stopped and stop_event:
+                logger.warning(f"In-flight emergency stop triggered for plan {plan_id}.")
+                plan.status = WorkflowLifecycleState.CANCELLED.value
+                tc = dict(plan.trigger_context or {})
+                tc["cancellation_reason"] = f"Emergency stop activated in-flight ({stop_event.scope}): {stop_event.reason}"
+                plan.trigger_context = tc
+                db.commit()
                 break
 
             # Check dependency satisfaction
@@ -298,12 +322,33 @@ class WorkflowExecutionEngine:
             }
             step_exec.completed_at = datetime.now(timezone.utc)
             db.commit()
+            AuditLogger.record_event(
+                db=db,
+                user_id=user_id,
+                event_type=AuditEventType.STEP_BLOCKED_BY_POLICY,
+                plan_id=plan_id,
+                action_identifier=step.action_identifier,
+                step_key=step.step_key,
+                policy_decision="BLOCKED",
+                error_details=step_exec.error_details,
+            )
             return ActionResult(
                 success=False,
                 output_payload=step_exec.error_details or {},
                 is_retriable=False,
                 error_message=step_exec.error_message,
             ), step_exec
+
+        # Record step dispatch audit
+        AuditLogger.record_event(
+            db=db,
+            user_id=user_id,
+            event_type=AuditEventType.STEP_DISPATCHED,
+            plan_id=plan_id,
+            action_identifier=step.action_identifier,
+            step_key=step.step_key,
+            payload=step.parameters,
+        )
 
         # Retry loop
         last_result: Optional[ActionResult] = None
@@ -329,6 +374,16 @@ class WorkflowExecutionEngine:
                     step_exec.compensation_status = "PENDING"
                     step_exec.compensation_receipt = result.compensation_payload
                 db.commit()
+                AuditLogger.record_event(
+                    db=db,
+                    user_id=user_id,
+                    event_type=AuditEventType.STEP_COMPLETED,
+                    plan_id=plan_id,
+                    action_identifier=step.action_identifier,
+                    step_key=step.step_key,
+                    result_status="COMPLETED",
+                    payload=result.output_payload,
+                )
                 return result, step_exec
 
             # If failure is not retriable (e.g. auth failed, invalid parameters), break early
@@ -345,6 +400,16 @@ class WorkflowExecutionEngine:
         step_exec.completed_at = datetime.now(timezone.utc)
         step_exec.error_message = last_result.error_message if last_result else "Execution failed"
         db.commit()
+        AuditLogger.record_event(
+            db=db,
+            user_id=user_id,
+            event_type=AuditEventType.STEP_FAILED,
+            plan_id=plan_id,
+            action_identifier=step.action_identifier,
+            step_key=step.step_key,
+            result_status="FAILED",
+            error_details={"error": step_exec.error_message},
+        )
         return last_result or ActionResult(success=False, output_payload={}, error_message="Failed"), step_exec
 
     @classmethod
@@ -392,44 +457,12 @@ class WorkflowExecutionEngine:
                 logger.error(f"Failed to compensate {action_id}: {ex}")
 
     @classmethod
-    def rollback_plan(cls, db: Session, plan_id: uuid.UUID, user_id: uuid.UUID) -> WorkflowExecutionPlan:
+    def rollback_plan(cls, db: Session, plan_id: uuid.UUID, user_id: uuid.UUID, reason: Optional[str] = None) -> WorkflowExecutionPlan:
         """Rolls back all completed steps for a completed or partially completed plan."""
-        plan = db.execute(
-            select(WorkflowExecutionPlan).where(
-                and_(
-                    WorkflowExecutionPlan.id == plan_id,
-                    WorkflowExecutionPlan.user_id == user_id,
-                )
-            )
-        ).scalar_one_or_none()
-
+        RollbackManager.execute_plan_rollback(db, plan_id, user_id, triggered_by="USER_MANUAL", reason=reason)
+        plan = db.get(WorkflowExecutionPlan, plan_id)
         if not plan:
             raise ValueError(f"Plan '{plan_id}' not found.")
-
-        # Reversibility check
-        step_execs = db.execute(
-            select(WorkflowStepExecution)
-            .where(
-                and_(
-                    WorkflowStepExecution.plan_id == plan_id,
-                    WorkflowStepExecution.status == "COMPLETED",
-                    WorkflowStepExecution.compensation_status == "PENDING",
-                )
-            )
-            .order_by(WorkflowStepExecution.completed_at.desc())
-        ).scalars().all()
-
-        for sexec in step_execs:
-            if sexec.compensation_receipt:
-                ActionHandlers.compensate(db, sexec.action_identifier, sexec.compensation_receipt, user_id)
-                sexec.compensation_status = "COMPLETED"
-                sexec.status = "COMPENSATED"
-                db.commit()
-
-        plan.status = WorkflowLifecycleState.ROLLED_BACK.value
-        plan.updated_at = datetime.now(timezone.utc)
-        db.commit()
-        db.refresh(plan)
         return plan
 
     @classmethod
