@@ -132,6 +132,12 @@ export const navItems: NavItem[] = [
     icon: Target,
     description: "Multi-tier goals, project health & behavioral alignment",
   },
+  {
+    href: "/dependencies",
+    label: "Dependencies",
+    icon: GitFork,
+    description: "Cross-task dependencies, latent blockers & impact analysis",
+  },
 ];
 
 export const adaptiveNavItems: NavItem[] = [

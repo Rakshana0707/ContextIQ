@@ -34,6 +34,7 @@ from app.api.v1.observability import router as observability_router
 from app.api.v1.knowledge_graph import router as knowledge_graph_router
 from app.api.v1.behavioral_memory import router as behavioral_memory_router
 from app.api.v1.goals import router as goals_router
+from app.api.v1.dependencies import dependencies_router
 
 api_router = APIRouter()
 
@@ -71,4 +72,5 @@ api_router.include_router(observability_router)
 api_router.include_router(knowledge_graph_router)
 api_router.include_router(behavioral_memory_router)
 api_router.include_router(goals_router)
+api_router.include_router(dependencies_router)
 

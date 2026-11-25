@@ -111,6 +111,12 @@ from app.models.goal_project import (  # noqa: F401
     GoalRecommendation,
     ProjectMilestone,
 )
+from app.models.task_dependency import (  # noqa: F401
+    TaskDependency,
+    TaskDependencyType,
+    DependencyValidationStatus,
+    DependencyDetectionMethod,
+)
 
 from app.models.enums import (  # noqa: F401
     RecoveryState,
@@ -217,6 +223,10 @@ __all__ = [
     "ProjectProgressSnapshot",
     "GoalRecommendation",
     "ProjectMilestone",
+    "TaskDependency",
+    "TaskDependencyType",
+    "DependencyValidationStatus",
+    "DependencyDetectionMethod",
 ]
 
 
