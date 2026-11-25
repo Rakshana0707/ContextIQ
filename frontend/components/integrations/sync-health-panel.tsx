@@ -52,7 +52,7 @@ export function SyncHealthPanel() {
 
   // Derive sync health stats
   const activeIntegrations = integrations.filter((i) => i.connection_status === "CONNECTED");
-  const failedSyncs = integrations.filter((i) => i.sync_status === "ERROR");
+  const failedSyncs = integrations.filter((i) => i.sync_status === "FAILED");
   const activeDevices = devices.filter((d) => d.is_active && d.connection_status !== "REVOKED");
 
   return (

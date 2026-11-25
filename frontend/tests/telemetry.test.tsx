@@ -18,6 +18,7 @@ vi.mock("@/lib/api/services/telemetry", () => ({
     getOverview: vi.fn(),
     getDetectedInterruptions: vi.fn(),
     getRecoveryAnalytics: vi.fn(),
+    getRecoveryPrediction: vi.fn(),
     getFrictionIndex: vi.fn(),
     getInterruptionTrends: vi.fn(),
     getPersonalBaseline: vi.fn(),
@@ -208,6 +209,10 @@ describe("TelemetryDashboardPage Integration", () => {
         today_relative_freq_ratio: 1.0,
         baseline_tier: "SIMILAR",
       },
+      error: null,
+    });
+    vi.mocked(telemetryApi.getRecoveryPrediction).mockResolvedValue({
+      data: null,
       error: null,
     });
 

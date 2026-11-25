@@ -34,6 +34,30 @@ try {
     Write-Host "  [FAIL] Failed to reach Data Engine: $_" -ForegroundColor Red
 }
 
+function Invoke-EndpointCheck {
+    param(
+        [string]$Uri
+    )
+    try {
+        $req = [System.Net.WebRequest]::Create($Uri)
+        $req.Timeout = 2000
+        $req.Method = "GET"
+        $resp = $req.GetResponse()
+        $status = [int]$resp.StatusCode
+        $resp.Close()
+        return $status
+    } catch [System.Net.WebException] {
+        if ($_.Response) {
+            $status = [int]$_.Response.StatusCode
+            $_.Response.Close()
+            return $status
+        }
+        return $null
+    } catch {
+        return $null
+    }
+}
+
 # 4. Phase 4 Adaptive Intelligence API Endpoints (:8000)
 Write-Host "`n[4] Checking Adaptive Intelligence API Endpoints (:8000)..." -ForegroundColor Yellow
 $adaptiveEndpoints = @(
@@ -46,16 +70,17 @@ $adaptiveEndpoints = @(
     "/api/v1/adaptive/notifications"
 )
 foreach ($ep in $adaptiveEndpoints) {
-    try {
-        # Note: protected endpoints may return 401 Unauthorized or 200 OK without JWT, which confirms endpoint is registered and active
-        $res = Invoke-WebRequest -Uri ("http://localhost:8000" + $ep) -UseBasicParsing -SkipHttpErrorCheck
-        if ($res.StatusCode -in @(200, 401)) {
-            Write-Host "  [OK] $ep -> HTTP $($res.StatusCode)" -ForegroundColor Green
-        } else {
-            Write-Host "  [WARN] $ep -> HTTP $($res.StatusCode)" -ForegroundColor Yellow
-        }
-    } catch {
-        Write-Host "  [FAIL] $ep -> Connection Failed: $_" -ForegroundColor Red
+    if (-not ($activePortList -contains 8000)) {
+        Write-Host "  [SKIP] $ep (Port 8000 offline)" -ForegroundColor DarkGray
+        continue
+    }
+    $status = Invoke-EndpointCheck -Uri ("http://localhost:8000" + $ep)
+    if ($status -in @(200, 401)) {
+        Write-Host "  [OK] $ep -> HTTP $status" -ForegroundColor Green
+    } elseif ($status) {
+        Write-Host "  [WARN] $ep -> HTTP $status" -ForegroundColor Yellow
+    } else {
+        Write-Host "  [FAIL] $ep -> Connection Failed" -ForegroundColor Red
     }
 }
 
@@ -71,20 +96,49 @@ $ecosystemEndpoints = @(
     "/api/v1/context/locations"
 )
 foreach ($ep in $ecosystemEndpoints) {
-    try {
-        $res = Invoke-WebRequest -Uri ("http://localhost:8000" + $ep) -UseBasicParsing -SkipHttpErrorCheck
-        if ($res.StatusCode -in @(200, 401, 405)) {
-            Write-Host "  [OK] $ep -> HTTP $($res.StatusCode)" -ForegroundColor Green
-        } else {
-            Write-Host "  [WARN] $ep -> HTTP $($res.StatusCode)" -ForegroundColor Yellow
-        }
-    } catch {
-        Write-Host "  [FAIL] $ep -> Connection Failed: $_" -ForegroundColor Red
+    if (-not ($activePortList -contains 8000)) {
+        Write-Host "  [SKIP] $ep (Port 8000 offline)" -ForegroundColor DarkGray
+        continue
+    }
+    $status = Invoke-EndpointCheck -Uri ("http://localhost:8000" + $ep)
+    if ($status -in @(200, 401, 405)) {
+        Write-Host "  [OK] $ep -> HTTP $status" -ForegroundColor Green
+    } elseif ($status) {
+        Write-Host "  [WARN] $ep -> HTTP $status" -ForegroundColor Yellow
+    } else {
+        Write-Host "  [FAIL] $ep -> Connection Failed" -ForegroundColor Red
     }
 }
 
-# 6. Frontend Dashboard Pages
-Write-Host "`n[6] Checking Frontend Dashboard Pages (:3001 / :3000)..." -ForegroundColor Yellow
+# 6. Phase 6 Advanced Predictive Intelligence & Decision Support Endpoints (:8000)
+Write-Host "`n[6] Checking Phase 6 Predictive Intelligence & Decision Support Endpoints (:8000)..." -ForegroundColor Yellow
+$phase6Endpoints = @(
+    "/api/v1/analytics/recovery/benchmark",
+    "/api/v1/causal/questions",
+    "/api/v1/counterfactual/candidates",
+    "/api/v1/sequence/benchmark",
+    "/api/v1/survival/benchmark",
+    "/api/v1/uncertainty/audit",
+    "/api/v1/simulation/scenarios",
+    "/api/v1/analytics/simulation/scenarios"
+)
+foreach ($ep in $phase6Endpoints) {
+    if (-not ($activePortList -contains 8000)) {
+        Write-Host "  [SKIP] $ep (Port 8000 offline)" -ForegroundColor DarkGray
+        continue
+    }
+    $status = Invoke-EndpointCheck -Uri ("http://localhost:8000" + $ep)
+    if ($status -in @(200, 401)) {
+        Write-Host "  [OK] $ep -> HTTP $status" -ForegroundColor Green
+    } elseif ($status) {
+        Write-Host "  [WARN] $ep -> HTTP $status" -ForegroundColor Yellow
+    } else {
+        Write-Host "  [FAIL] $ep -> Connection Failed" -ForegroundColor Red
+    }
+}
+
+# 7. Frontend Dashboard Pages
+Write-Host "`n[7] Checking Frontend Dashboard Pages (:3001 / :3000)..." -ForegroundColor Yellow
 $fePort = 3001
 $routes = @(
     @{ Path = "/"; Label = "Dashboard Overview" },
@@ -106,15 +160,17 @@ $routes = @(
 )
 
 foreach ($r in $routes) {
-    try {
-        $res = Invoke-WebRequest -Uri ("http://localhost:$fePort" + $r.Path) -UseBasicParsing -SkipHttpErrorCheck
-        if ($res.StatusCode -eq 200) {
-            Write-Host "  [OK] $($r.Label) ($($r.Path)) -> HTTP 200 OK" -ForegroundColor Green
-        } else {
-            Write-Host "  [WARN] $($r.Label) ($($r.Path)) -> HTTP $($res.StatusCode)" -ForegroundColor Yellow
-        }
-    } catch {
-        Write-Host "  [FAIL] $($r.Label) ($($r.Path)) -> Connection Failed: $_" -ForegroundColor Red
+    if (-not ($activePortList -contains $fePort)) {
+        Write-Host "  [SKIP] $($r.Label) ($($r.Path)) (Port $fePort offline)" -ForegroundColor DarkGray
+        continue
+    }
+    $status = Invoke-EndpointCheck -Uri ("http://localhost:$fePort" + $r.Path)
+    if ($status -eq 200) {
+        Write-Host "  [OK] $($r.Label) ($($r.Path)) -> HTTP 200 OK" -ForegroundColor Green
+    } elseif ($status) {
+        Write-Host "  [WARN] $($r.Label) ($($r.Path)) -> HTTP $status" -ForegroundColor Yellow
+    } else {
+        Write-Host "  [FAIL] $($r.Label) ($($r.Path)) -> Connection Failed" -ForegroundColor Red
     }
 }
 

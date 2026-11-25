@@ -57,6 +57,7 @@ export interface RequestOptions {
   method?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   body?: unknown;
   query?: Record<string, string | number | boolean | undefined>;
+  params?: Record<string, string | number | boolean | undefined>;
   headers?: Record<string, string>;
   signal?: AbortSignal;
   baseUrl?: ServiceBaseUrl | string;
@@ -133,7 +134,8 @@ async function request<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<ApiResult<T>> {
-  const { method = "GET", body, query, headers, signal, baseUrl } = options;
+  const { method = "GET", body, query, params, headers, signal, baseUrl } = options;
+  const effectiveQuery = query ?? params;
 
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), DEFAULT_TIMEOUT_MS);
@@ -142,7 +144,7 @@ async function request<T>(
   try {
     const token = getAuthToken();
     const devUserId = getDevUserId();
-    const res = await fetch(buildUrl(path, query, baseUrl), {
+    const res = await fetch(buildUrl(path, effectiveQuery, baseUrl), {
       method,
       headers: {
         "Content-Type": "application/json",
@@ -230,6 +232,41 @@ export async function mockResult<T>(
 
 export const apiClient = {
   request,
+  get: async <T>(path: string, options?: Omit<RequestOptions, "method">): Promise<{ data: T }> => {
+    const res = await request<T>(path, { ...options, method: "GET" });
+    if (res.error || res.data === null) {
+      throw new Error(res.error?.message ?? "API request failed");
+    }
+    return { data: res.data };
+  },
+  post: async <T>(path: string, body?: unknown, options?: Omit<RequestOptions, "method" | "body">): Promise<{ data: T }> => {
+    const res = await request<T>(path, { ...options, method: "POST", body });
+    if (res.error || res.data === null) {
+      throw new Error(res.error?.message ?? "API request failed");
+    }
+    return { data: res.data };
+  },
+  put: async <T>(path: string, body?: unknown, options?: Omit<RequestOptions, "method" | "body">): Promise<{ data: T }> => {
+    const res = await request<T>(path, { ...options, method: "PUT", body });
+    if (res.error || res.data === null) {
+      throw new Error(res.error?.message ?? "API request failed");
+    }
+    return { data: res.data };
+  },
+  patch: async <T>(path: string, body?: unknown, options?: Omit<RequestOptions, "method" | "body">): Promise<{ data: T }> => {
+    const res = await request<T>(path, { ...options, method: "PATCH", body });
+    if (res.error || res.data === null) {
+      throw new Error(res.error?.message ?? "API request failed");
+    }
+    return { data: res.data };
+  },
+  delete: async <T>(path: string, options?: Omit<RequestOptions, "method">): Promise<{ data: T }> => {
+    const res = await request<T>(path, { ...options, method: "DELETE" });
+    if (res.error || res.data === null) {
+      throw new Error(res.error?.message ?? "API request failed");
+    }
+    return { data: res.data };
+  },
   USE_MOCK,
   API_BASE_URL,
   ANALYTICS_API_URL,
