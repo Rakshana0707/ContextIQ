@@ -56,6 +56,7 @@ export type {
 export { observabilityApi } from "@/lib/api/services/observability";
 export { knowledgeGraphApi } from "@/lib/api/services/knowledge_graph";
 export { behavioralMemoryApi } from "@/lib/api/services/behavioral_memory";
+export { goalProjectApi } from "@/lib/api/services/goal_project";
 
 
 

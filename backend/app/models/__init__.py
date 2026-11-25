@@ -100,6 +100,17 @@ from app.models.behavioral_memory import (  # noqa: F401
     MemoryValidityStatus,
     PatternEvolutionType,
 )
+from app.models.goal_project import (  # noqa: F401
+    GoalHierarchyLevel,
+    ProjectHealthStatus,
+    GoalRiskFactor,
+    GoalTaskAssociation,
+    ProjectGoalAssociation,
+    GoalProgressSnapshot,
+    ProjectProgressSnapshot,
+    GoalRecommendation,
+    ProjectMilestone,
+)
 
 from app.models.enums import (  # noqa: F401
     RecoveryState,
@@ -197,6 +208,15 @@ __all__ = [
     "MemorySourceType",
     "MemoryValidityStatus",
     "PatternEvolutionType",
+    "GoalHierarchyLevel",
+    "ProjectHealthStatus",
+    "GoalRiskFactor",
+    "GoalTaskAssociation",
+    "ProjectGoalAssociation",
+    "GoalProgressSnapshot",
+    "ProjectProgressSnapshot",
+    "GoalRecommendation",
+    "ProjectMilestone",
 ]
 
 

@@ -265,6 +265,8 @@ class Project(Base, UUIDPKMixin, TimestampMixin):
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="ACTIVE")
     priority: Mapped[str] = mapped_column(String(32), nullable=False, default="MEDIUM")
     target_completion_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    completion_criteria: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    health_status: Mapped[str] = mapped_column(String(32), nullable=False, default="ON_TRACK", index=True)
     metadata_payload: Mapped[Dict[str, Any]] = mapped_column(
         sa.JSON().with_variant(JSONB, "postgresql"),
         nullable=False,
@@ -278,23 +280,31 @@ class Project(Base, UUIDPKMixin, TimestampMixin):
 class Goal(Base, UUIDPKMixin, TimestampMixin):
     """
     Long-term strategic objective or aspiration of the user.
+    Supports hierarchical decomposition (LONG_TERM -> INTERMEDIATE -> SHORT_TERM).
     """
     __tablename__ = "goals"
     __table_args__ = (
         Index("ix_goals_user_status", "user_id", "status"),
         Index("ix_goals_category", "category"),
+        Index("ix_goals_hierarchy", "user_id", "hierarchy_level"),
         {"extend_existing": True},
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
     )
+    parent_goal_id: Mapped[Optional[uuid.UUID]] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("goals.id", ondelete="SET NULL"), nullable=True, index=True
+    )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     category: Mapped[str] = mapped_column(String(64), nullable=False, default="PRODUCTIVITY")
+    hierarchy_level: Mapped[str] = mapped_column(String(32), nullable=False, default="LONG_TERM", index=True)
+    priority: Mapped[str] = mapped_column(String(32), nullable=False, default="MEDIUM", index=True)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="ACTIVE")
     target_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     progress_pct: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
+    completion_criteria: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     metadata_payload: Mapped[Dict[str, Any]] = mapped_column(
         sa.JSON().with_variant(JSONB, "postgresql"),
         nullable=False,
@@ -313,6 +323,7 @@ class Milestone(Base, UUIDPKMixin, TimestampMixin):
     __table_args__ = (
         Index("ix_milestones_project", "project_id"),
         Index("ix_milestones_goal", "goal_id"),
+        Index("ix_milestones_completed", "is_completed"),
         {"extend_existing": True},
     )
 
@@ -326,8 +337,11 @@ class Milestone(Base, UUIDPKMixin, TimestampMixin):
         UUID(as_uuid=True), ForeignKey("goals.id", ondelete="CASCADE"), nullable=True, index=True
     )
     title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     due_date: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="PENDING")
+    is_completed: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     order_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     metadata_payload: Mapped[Dict[str, Any]] = mapped_column(
         sa.JSON().with_variant(JSONB, "postgresql"),

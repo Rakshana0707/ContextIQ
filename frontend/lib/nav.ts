@@ -19,6 +19,7 @@ import {
   CalendarDays,
   Laptop,
   MapPin,
+  Target,
 } from "lucide-react";
 
 export interface NavItem {
@@ -124,6 +125,12 @@ export const navItems: NavItem[] = [
     label: "Behavioral Memory",
     icon: BrainCircuit,
     description: "Long-term behavioral memory & pattern evolution",
+  },
+  {
+    href: "/goals",
+    label: "Goals & Projects",
+    icon: Target,
+    description: "Multi-tier goals, project health & behavioral alignment",
   },
 ];
 
