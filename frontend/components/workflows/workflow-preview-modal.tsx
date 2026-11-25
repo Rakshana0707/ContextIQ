@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { WorkflowStepCard } from "./workflow-step-card";
+import { WorkflowExecutionProgressView } from "./workflow-execution-progress";
 import type { WorkflowExecutionPlan, PlanComparisonCandidate } from "@/types/workflows";
 
 interface WorkflowPreviewModalProps {
@@ -166,6 +167,17 @@ export const WorkflowPreviewModal: React.FC<WorkflowPreviewModalProps> = ({
               ))}
             </div>
           </div>
+
+          {/* Execution Progress & Controls View */}
+          {plan.status !== "CREATED" && plan.status !== "DRAFT" && plan.status !== "AWAITING_APPROVAL" && (
+            <div className="pt-2">
+              <WorkflowExecutionProgressView
+                planId={plan.id}
+                initialStatus={plan.status}
+                onStatusChange={() => {}}
+              />
+            </div>
+          )}
         </div>
 
         {/* Footer / Approval Controls */}

@@ -166,6 +166,44 @@ class WorkflowExecutionPlanResponse(BaseModel):
     updated_at: datetime
 
 
+class WorkflowStepExecutionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: uuid.UUID
+    plan_id: uuid.UUID
+    step_key: str
+    action_identifier: str
+    status: str
+    attempt_count: int
+    max_attempts: int
+    idempotency_key: str
+    input_payload: Dict[str, Any] = Field(default_factory=dict)
+    output_payload: Optional[Dict[str, Any]] = None
+    error_message: Optional[str] = None
+    started_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    compensation_status: str
+
+
+class WorkflowExecutionProgressResponse(BaseModel):
+    plan_id: uuid.UUID
+    title: str
+    status: str
+    version: int
+    total_steps: int
+    completed_steps: int
+    failed_steps: int
+    skipped_steps: int
+    progress_percentage: float
+    step_executions: List[WorkflowStepExecutionResponse] = Field(default_factory=list)
+    executed_at: Optional[datetime] = None
+    is_reversible: bool = True
+
+
+class WorkflowExecuteRequest(BaseModel):
+    auto_rollback_on_failure: bool = Field(default=False, description="Whether to automatically revert steps if critical step fails")
+
+
 class PlanTransitionRequest(BaseModel):
     target_state: WorkflowLifecycleState
     reason: Optional[str] = Field(default=None, max_length=255)

@@ -1,6 +1,6 @@
 """
 SQLAlchemy ORM models for Multi-Step Workflow Planning, Dependencies,
-Execution Plans, and Plan Versioning (ContextIQ Phase 7.4).
+Execution Plans, Step Executions, and Plan Versioning (ContextIQ Phase 7.4 & 7.5).
 """
 from __future__ import annotations
 
@@ -196,7 +196,66 @@ class WorkflowExecutionPlan(Base, UUIDPKMixin, TimestampMixin):
         cascade="all, delete-orphan",
         order_by="WorkflowPlanVersion.version.desc()",
     )
+    step_executions: Mapped[List[WorkflowStepExecution]] = relationship(
+        "WorkflowStepExecution",
+        back_populates="plan",
+        cascade="all, delete-orphan",
+        order_by="WorkflowStepExecution.created_at",
+    )
     user = relationship("User")
+
+
+class WorkflowStepExecution(Base, UUIDPKMixin, TimestampMixin):
+    """
+    Execution tracking and audit receipt for an individual step within a WorkflowExecutionPlan.
+    Captures input snapshots, output receipts, attempt counts, errors, and compensation state.
+    """
+    __tablename__ = "workflow_step_executions"
+    __table_args__ = (
+        Index("ix_step_exec_plan_key", "plan_id", "step_key"),
+        Index("ix_step_exec_status", "status"),
+        Index("ix_step_exec_idempotency", "plan_id", "idempotency_key", unique=True),
+    )
+
+    plan_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("workflow_execution_plans.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    step_key: Mapped[str] = mapped_column(String(64), nullable=False)
+    action_identifier: Mapped[str] = mapped_column(String(128), nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="PENDING", index=True)
+    # PENDING, EXECUTING, COMPLETED, FAILED, SKIPPED, CANCELLED, COMPENSATED
+
+    attempt_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    max_attempts: Mapped[int] = mapped_column(Integer, nullable=False, default=3)
+    idempotency_key: Mapped[str] = mapped_column(String(128), nullable=False)
+
+    input_payload: Mapped[Dict[str, Any]] = mapped_column(
+        sa.JSON().with_variant(JSONB, "postgresql"),
+        nullable=False,
+        default=dict,
+    )
+    output_payload: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+        sa.JSON().with_variant(JSONB, "postgresql"),
+        nullable=True,
+    )
+    error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    error_details: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+        sa.JSON().with_variant(JSONB, "postgresql"),
+        nullable=True,
+    )
+
+    started_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+
+    # Compensation & rollback tracking
+    compensation_status: Mapped[str] = mapped_column(String(32), nullable=False, default="NONE")
+    # NONE, PENDING, COMPLETED, FAILED
+    compensation_receipt: Mapped[Optional[Dict[str, Any]]] = mapped_column(
+        sa.JSON().with_variant(JSONB, "postgresql"),
+        nullable=True,
+    )
+
+    plan = relationship("WorkflowExecutionPlan", back_populates="step_executions")
 
 
 class WorkflowPlanVersion(Base, UUIDPKMixin):

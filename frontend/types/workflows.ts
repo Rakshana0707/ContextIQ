@@ -1,5 +1,6 @@
 /**
- * Types for Multi-Step Workflow Planning and Governed Orchestration (Phase 7.4).
+ * Types for Multi-Step Workflow Planning, Governed Orchestration,
+ * and Execution Engine (Phase 7.4 & 7.5).
  */
 
 export type WorkflowLifecycleState =
@@ -81,6 +82,38 @@ export interface WorkflowExecutionPlan {
   expires_at?: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface WorkflowStepExecution {
+  id: string;
+  plan_id: string;
+  step_key: string;
+  action_identifier: string;
+  status: "PENDING" | "EXECUTING" | "COMPLETED" | "FAILED" | "SKIPPED" | "CANCELLED" | "COMPENSATED";
+  attempt_count: number;
+  max_attempts: number;
+  idempotency_key: string;
+  input_payload: Record<string, any>;
+  output_payload?: Record<string, any>;
+  error_message?: string;
+  started_at?: string;
+  completed_at?: string;
+  compensation_status: string;
+}
+
+export interface WorkflowExecutionProgress {
+  plan_id: string;
+  title: string;
+  status: WorkflowLifecycleState;
+  version: number;
+  total_steps: number;
+  completed_steps: number;
+  failed_steps: number;
+  skipped_steps: number;
+  progress_percentage: number;
+  step_executions: WorkflowStepExecution[];
+  executed_at?: string;
+  is_reversible: boolean;
 }
 
 export interface ActionContract {

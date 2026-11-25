@@ -62,6 +62,7 @@ from app.models.workflow_models import (
     WorkflowStep,
     WorkflowDependency,
     WorkflowExecutionPlan,
+    WorkflowStepExecution,
     WorkflowPlanVersion,
 )
 
@@ -124,6 +125,7 @@ __all__ = [
     "WorkflowStep",
     "WorkflowDependency",
     "WorkflowExecutionPlan",
+    "WorkflowStepExecution",
     "WorkflowPlanVersion",
 ]
 

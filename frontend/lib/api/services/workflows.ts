@@ -1,6 +1,7 @@
 import { apiClient, USE_MOCK } from "@/lib/api/client";
 import type {
   WorkflowExecutionPlan,
+  WorkflowExecutionProgress,
   ActionContract,
   WorkflowLifecycleState,
 } from "@/types/workflows";
@@ -216,6 +217,95 @@ export const workflowsApi = {
         reason,
       },
     });
+    if (res.error) throw new Error(res.error.message);
+    return res.data!;
+  },
+
+  executePlan: async (
+    planId: string,
+    autoRollbackOnFailure: boolean = false,
+    sync: boolean = false
+  ): Promise<WorkflowExecutionPlan> => {
+    if (USE_MOCK) {
+      const plan = mockWorkflowPlans.find((p) => p.id === planId);
+      if (!plan) throw new Error("Plan not found");
+      plan.status = "COMPLETED";
+      plan.executed_at = new Date().toISOString();
+      return { ...plan };
+    }
+    const res = await apiClient.request<WorkflowExecutionPlan>(
+      `/workflows/plans/${planId}/execute?sync=${sync}`,
+      {
+        method: "POST",
+        body: { auto_rollback_on_failure: autoRollbackOnFailure },
+      }
+    );
+    if (res.error) throw new Error(res.error.message);
+    return res.data!;
+  },
+
+  getExecutionProgress: async (planId: string): Promise<WorkflowExecutionProgress> => {
+    if (USE_MOCK) {
+      const plan = mockWorkflowPlans.find((p) => p.id === planId) || mockWorkflowPlans[0];
+      return {
+        plan_id: plan.id,
+        title: plan.title,
+        status: plan.status,
+        version: plan.version,
+        total_steps: plan.plan_steps.length,
+        completed_steps: plan.status === "COMPLETED" ? plan.plan_steps.length : 1,
+        failed_steps: 0,
+        skipped_steps: 0,
+        progress_percentage: plan.status === "COMPLETED" ? 100 : 16.7,
+        step_executions: plan.plan_steps.map((s, idx) => ({
+          id: `step-exec-${idx}`,
+          plan_id: plan.id,
+          step_key: s.step_key,
+          action_identifier: s.action_identifier,
+          status: plan.status === "COMPLETED" ? "COMPLETED" : idx === 0 ? "COMPLETED" : "PENDING",
+          attempt_count: 1,
+          max_attempts: 3,
+          idempotency_key: `${plan.id}:${s.step_key}`,
+          input_payload: s.parameters,
+          compensation_status: "NONE",
+        })),
+        is_reversible: true,
+      };
+    }
+    const res = await apiClient.request<WorkflowExecutionProgress>(
+      `/workflows/plans/${planId}/execution`,
+      { method: "GET" }
+    );
+    if (res.error) throw new Error(res.error.message);
+    return res.data!;
+  },
+
+  cancelExecution: async (planId: string): Promise<WorkflowExecutionPlan> => {
+    if (USE_MOCK) {
+      const plan = mockWorkflowPlans.find((p) => p.id === planId);
+      if (!plan) throw new Error("Plan not found");
+      plan.status = "CANCELLED";
+      return { ...plan };
+    }
+    const res = await apiClient.request<WorkflowExecutionPlan>(
+      `/workflows/plans/${planId}/cancel`,
+      { method: "POST" }
+    );
+    if (res.error) throw new Error(res.error.message);
+    return res.data!;
+  },
+
+  rollbackExecution: async (planId: string): Promise<WorkflowExecutionPlan> => {
+    if (USE_MOCK) {
+      const plan = mockWorkflowPlans.find((p) => p.id === planId);
+      if (!plan) throw new Error("Plan not found");
+      plan.status = "ROLLED_BACK";
+      return { ...plan };
+    }
+    const res = await apiClient.request<WorkflowExecutionPlan>(
+      `/workflows/plans/${planId}/rollback`,
+      { method: "POST" }
+    );
     if (res.error) throw new Error(res.error.message);
     return res.data!;
   },
