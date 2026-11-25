@@ -347,6 +347,43 @@ def audit_uncertainty_analytics(
     return UncertaintyDecisionService.audit_all_models()
 
 
+@router.get("/analytics/simulation/simulate")
+def simulate_scenario_analytics(
+    scenario_type: str = "SCHEDULE_FOCUS_SESSION",
+    task_id: Optional[uuid.UUID] = None,
+    db: Session = Depends(get_db),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Convenience endpoint to simulate a digital twin scenario via analytics router."""
+    from app.schemas.digital_twin_simulation import ScenarioSimulationRequest, ScenarioType
+    from app.services.simulation_service import SimulationService
+
+    norm_st = scenario_type.upper()
+    try:
+        st_enum = ScenarioType(norm_st)
+    except ValueError:
+        st_enum = ScenarioType.SCHEDULE_FOCUS_SESSION
+
+    req = ScenarioSimulationRequest(
+        scenario_type=st_enum,
+        user_id=user_id,
+        task_id=task_id,
+    )
+    return SimulationService.simulate_scenario(db=db, request=req)
+
+
+@router.get("/analytics/simulation/scenarios")
+def list_scenarios_analytics(
+    db: Session = Depends(get_db),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Convenience endpoint to list saved simulation scenarios via analytics router."""
+    from app.services.simulation_service import SimulationService
+
+    return SimulationService.list_saved_scenarios(db=db, user_id=user_id)
+
+
+
 
 
 

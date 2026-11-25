@@ -24,6 +24,7 @@ from app.api.v1.sequence_prediction import router as sequence_router
 from app.api.v1.survival import router as survival_router
 from app.api.v1.multi_objective import router as multi_objective_router
 from app.api.v1.uncertainty import router as uncertainty_router
+from app.api.v1.simulation import router as simulation_router
 
 api_router = APIRouter()
 
@@ -51,4 +52,5 @@ api_router.include_router(sequence_router)
 api_router.include_router(survival_router)
 api_router.include_router(multi_objective_router)
 api_router.include_router(uncertainty_router)
+api_router.include_router(simulation_router)
 
