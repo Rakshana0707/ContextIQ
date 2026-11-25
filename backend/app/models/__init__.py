@@ -57,6 +57,13 @@ from app.models.event_models import (
     DeadLetterEventRecord,
     ProactiveFeedItem,
 )
+from app.models.workflow_models import (
+    WorkflowDefinition,
+    WorkflowStep,
+    WorkflowDependency,
+    WorkflowExecutionPlan,
+    WorkflowPlanVersion,
+)
 
 from app.models.enums import RecoveryState  # noqa: F401
 
@@ -113,6 +120,11 @@ __all__ = [
     "StandardEventRecord",
     "DeadLetterEventRecord",
     "ProactiveFeedItem",
+    "WorkflowDefinition",
+    "WorkflowStep",
+    "WorkflowDependency",
+    "WorkflowExecutionPlan",
+    "WorkflowPlanVersion",
 ]
 
 
