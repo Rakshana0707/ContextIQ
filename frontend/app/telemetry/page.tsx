@@ -21,6 +21,7 @@ import { TelemetryOverviewCard } from "@/components/telemetry/telemetry-overview
 import { ActivityTimelineChart } from "@/components/telemetry/activity-timeline-chart";
 import { InterruptionExplorer } from "@/components/telemetry/interruption-explorer";
 import { RecoveryAnalyticsPanel } from "@/components/telemetry/recovery-analytics-panel";
+import { CausalAnalysisPanel } from "@/components/telemetry/causal-analysis-panel";
 import { TelemetryPrivacyControls } from "@/components/telemetry/telemetry-privacy-controls";
 import { telemetryApi } from "@/lib/api/services/telemetry";
 import type {
@@ -255,12 +256,15 @@ export default function TelemetryDashboardPage() {
 
       {/* Main Tabbed Sections */}
       <Tabs defaultValue="timeline" className="space-y-4">
-        <TabsList className="grid grid-cols-3 max-w-md h-9 text-xs">
+        <TabsList className="grid grid-cols-4 max-w-lg h-9 text-xs">
           <TabsTrigger value="timeline" className="text-xs">
             Timeline & Explorer
           </TabsTrigger>
           <TabsTrigger value="recovery" className="text-xs">
             Cognitive Recovery
+          </TabsTrigger>
+          <TabsTrigger value="causal" className="text-xs">
+            Causal Modeling
           </TabsTrigger>
           <TabsTrigger value="privacy" className="text-xs">
             Agency & Controls
@@ -289,7 +293,12 @@ export default function TelemetryDashboardPage() {
           />
         </TabsContent>
 
-        {/* Tab 3: Agency & Controls */}
+        {/* Tab 3: Causal Behavioral Modeling & Confounding Analysis */}
+        <TabsContent value="causal" className="space-y-4">
+          <CausalAnalysisPanel />
+        </TabsContent>
+
+        {/* Tab 4: Agency & Controls */}
         <TabsContent value="privacy" className="space-y-4">
           <TelemetryPrivacyControls
             isPaused={agentStatus?.is_paused ?? false}

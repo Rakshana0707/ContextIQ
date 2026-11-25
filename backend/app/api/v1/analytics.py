@@ -195,3 +195,32 @@ def get_recovery_benchmark_metrics(
     from app.services.recovery_prediction_service import RecoveryPredictionService
     return RecoveryPredictionService.get_benchmark_comparison()
 
+
+@router.get("/analytics/causal/questions")
+def get_causal_questions(
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Returns supported causal research questions, adjustment sets, and DAGs."""
+    from app.services.causal_service import CausalService
+    return CausalService.list_questions()
+
+
+@router.get("/analytics/causal/evaluate")
+def evaluate_causal_question_analytics(
+    question_id: str = "recovery_buffer_on_resumption",
+    method: str = "doubly_robust_aipw",
+    db: Session = Depends(get_db),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Evaluates causal effect for a specified question via analytics router."""
+    from app.schemas.causal_analysis import CausalEvaluationRequest, CausalMethod, CausalQuestionId
+    from app.services.causal_service import CausalService
+
+    req = CausalEvaluationRequest(
+        question_id=CausalQuestionId(question_id),
+        method=CausalMethod(method),
+        user_id=user_id,
+    )
+    return CausalService.evaluate_causal_question(db=db, request=req)
+
+
