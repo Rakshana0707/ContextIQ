@@ -53,5 +53,7 @@ export type {
   LocationRecommendationsResponse,
   LocationConsentDTO,
 } from "@/lib/api/services/location_context";
+export { observabilityApi } from "@/lib/api/services/observability";
+
 
 

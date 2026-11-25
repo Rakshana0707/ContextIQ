@@ -36,6 +36,7 @@ from app.services.action_handlers import ActionHandlers, ActionResult
 from app.services.policy_engine import PolicyEngine
 from app.services.safety_engine import AuditLogger, EmergencyStopEngine, RollbackManager
 from app.services.workflow_validator import WorkflowValidator
+from app.core.metrics import metrics_registry
 
 logger = logging.getLogger(__name__)
 
@@ -127,6 +128,8 @@ class WorkflowExecutionEngine:
 
         # 1. Approval & Expiration Check
         cls.verify_approval(db, plan, user_id)
+
+        start_time = time.perf_counter()
 
         # 2. Concurrency Fencing / State Transition to EXECUTING
         if plan.status == WorkflowLifecycleState.EXECUTING.value:
@@ -239,6 +242,13 @@ class WorkflowExecutionEngine:
 
             db.commit()
             db.refresh(plan)
+
+        duration_ms = (time.perf_counter() - start_time) * 1000.0
+        success = plan.status in (
+            WorkflowLifecycleState.COMPLETED.value,
+            WorkflowLifecycleState.PARTIALLY_COMPLETED.value,
+        )
+        metrics_registry.record_workflow_execution(duration_ms, success)
 
         return plan
 

@@ -17,8 +17,10 @@ import {
   Layers,
   ArrowUpRight,
   ArrowDownRight,
+  Server,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { SystemObservabilityView } from "@/components/monitoring/system-observability-view";
 
 // Mock data representing monitoring API response
 const INITIAL_MONITORING_STATUS = {
@@ -332,6 +334,10 @@ export default function MonitoringPage() {
             <History className="h-4 w-4" />
             Deployment History & Rollback
           </TabsTrigger>
+          <TabsTrigger value="reliability" className="gap-2">
+            <Server className="h-4 w-4" />
+            System Reliability & Observability
+          </TabsTrigger>
         </TabsList>
 
         {/* Feature Drift Tab */}
@@ -445,6 +451,11 @@ export default function MonitoringPage() {
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* System Reliability Tab */}
+        <TabsContent value="reliability">
+          <SystemObservabilityView />
         </TabsContent>
       </Tabs>
     </div>
