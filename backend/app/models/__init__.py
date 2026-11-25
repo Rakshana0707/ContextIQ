@@ -91,6 +91,15 @@ from app.models.knowledge_graph import (  # noqa: F401
     Outcome,
     Resource,
 )
+from app.models.behavioral_memory import (  # noqa: F401
+    BehavioralMemory,
+    BehavioralTemporalSummary,
+    UserBehavioralMemoryPreference,
+    MemoryCategory,
+    MemorySourceType,
+    MemoryValidityStatus,
+    PatternEvolutionType,
+)
 
 from app.models.enums import (  # noqa: F401
     RecoveryState,
@@ -181,6 +190,13 @@ __all__ = [
     "Decision",
     "Outcome",
     "Resource",
+    "BehavioralMemory",
+    "BehavioralTemporalSummary",
+    "UserBehavioralMemoryPreference",
+    "MemoryCategory",
+    "MemorySourceType",
+    "MemoryValidityStatus",
+    "PatternEvolutionType",
 ]
 
 

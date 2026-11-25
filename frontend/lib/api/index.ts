@@ -55,6 +55,7 @@ export type {
 } from "@/lib/api/services/location_context";
 export { observabilityApi } from "@/lib/api/services/observability";
 export { knowledgeGraphApi } from "@/lib/api/services/knowledge_graph";
+export { behavioralMemoryApi } from "@/lib/api/services/behavioral_memory";
 
 
 

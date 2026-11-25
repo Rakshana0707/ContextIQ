@@ -119,6 +119,12 @@ export const navItems: NavItem[] = [
     icon: GitFork,
     description: "Personal productivity knowledge graph & causal evidence explorer",
   },
+  {
+    href: "/memory",
+    label: "Behavioral Memory",
+    icon: BrainCircuit,
+    description: "Long-term behavioral memory & pattern evolution",
+  },
 ];
 
 export const adaptiveNavItems: NavItem[] = [

@@ -32,6 +32,7 @@ from app.api.v1.policy import router as policy_router
 from app.api.v1.safety import router as safety_router
 from app.api.v1.observability import router as observability_router
 from app.api.v1.knowledge_graph import router as knowledge_graph_router
+from app.api.v1.behavioral_memory import router as behavioral_memory_router
 
 api_router = APIRouter()
 
@@ -67,4 +68,5 @@ api_router.include_router(policy_router)
 api_router.include_router(safety_router)
 api_router.include_router(observability_router)
 api_router.include_router(knowledge_graph_router)
+api_router.include_router(behavioral_memory_router)
 
