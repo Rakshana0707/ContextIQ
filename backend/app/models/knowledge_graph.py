@@ -24,7 +24,7 @@ from typing import Any, Dict, List, Optional
 import sqlalchemy as sa
 from sqlalchemy import Boolean, DateTime, Enum, Float, ForeignKey, Index, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB, UUID
-from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.orm import Mapped, mapped_column, relationship as orm_relationship
 
 from app.db.session import Base
 from app.models.enums import GraphNodeType, GraphRelationshipType, KnowledgeEvidenceSource
@@ -42,6 +42,7 @@ class KnowledgeGraphNode(Base, UUIDPKMixin, TimestampMixin):
         Index("ix_kg_nodes_user_type", "user_id", "node_type"),
         Index("ix_kg_nodes_entity", "entity_id", "entity_table"),
         sa.UniqueConstraint("user_id", "node_type", "entity_id", name="uq_kg_node_entity_identity"),
+        {"extend_existing": True},
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -57,6 +58,8 @@ class KnowledgeGraphNode(Base, UUIDPKMixin, TimestampMixin):
     )
     entity_table: Mapped[str] = mapped_column(String(64), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_archived: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False, index=True)
+    archived_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     properties: Mapped[Dict[str, Any]] = mapped_column(
         sa.JSON().with_variant(JSONB, "postgresql"),
         nullable=False,
@@ -64,14 +67,14 @@ class KnowledgeGraphNode(Base, UUIDPKMixin, TimestampMixin):
     )
 
     # Relationships
-    user = relationship("User")
-    outgoing_edges = relationship(
+    user = orm_relationship("User")
+    outgoing_edges = orm_relationship(
         "KnowledgeGraphEdge",
         foreign_keys="KnowledgeGraphEdge.source_node_id",
         back_populates="source_node",
         cascade="all, delete-orphan",
     )
-    incoming_edges = relationship(
+    incoming_edges = orm_relationship(
         "KnowledgeGraphEdge",
         foreign_keys="KnowledgeGraphEdge.target_node_id",
         back_populates="target_node",
@@ -99,6 +102,7 @@ class KnowledgeGraphEdge(Base, UUIDPKMixin, TimestampMixin):
         Index("ix_kg_edges_user_target_rel", "user_id", "target_node_id", "relationship_type"),
         Index("ix_kg_edges_source_target_type", "source_node_id", "target_node_id", "relationship_type", unique=True),
         Index("ix_kg_edges_inferred_conf", "user_id", "is_inferred", "confidence"),
+        {"extend_existing": True},
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -147,9 +151,14 @@ class KnowledgeGraphEdge(Base, UUIDPKMixin, TimestampMixin):
     )
 
     # Relationships
-    user = relationship("User")
-    source_node = relationship("KnowledgeGraphNode", foreign_keys=[source_node_id], back_populates="outgoing_edges")
-    target_node = relationship("KnowledgeGraphNode", foreign_keys=[target_node_id], back_populates="incoming_edges")
+    user = orm_relationship("User")
+    source_node = orm_relationship("KnowledgeGraphNode", foreign_keys=[source_node_id], back_populates="outgoing_edges")
+    target_node = orm_relationship("KnowledgeGraphNode", foreign_keys=[target_node_id], back_populates="incoming_edges")
+    evidences = orm_relationship(
+        "KnowledgeEvidence",
+        back_populates="edge",
+        cascade="all, delete-orphan",
+    )
 
     def __repr__(self) -> str:  # pragma: no cover
         return (
@@ -157,6 +166,81 @@ class KnowledgeGraphEdge(Base, UUIDPKMixin, TimestampMixin):
             f"source={self.source_node_id} -> target={self.target_node_id} "
             f"conf={self.confidence:.2f} inferred={self.is_inferred}>"
         )
+
+
+class KnowledgeEvidence(Base, UUIDPKMixin, TimestampMixin):
+    """
+    Evidence record grounding a KnowledgeRelationship in observed telemetry or inference data.
+    """
+    __tablename__ = "knowledge_evidence"
+    __table_args__ = (
+        Index("ix_kg_evidence_user_rel", "user_id", "relationship_id"),
+        Index("ix_kg_evidence_type", "evidence_type"),
+        {"extend_existing": True},
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    relationship_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("knowledge_graph_edges.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    evidence_type: Mapped[str] = mapped_column(String(64), nullable=False, default="EXPLICIT_USER")
+    source_entity_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+    source_entity_table: Mapped[Optional[str]] = mapped_column(String(64), nullable=True)
+    confidence_score: Mapped[float] = mapped_column(Float, nullable=False, default=1.0)
+    payload: Mapped[Dict[str, Any]] = mapped_column(
+        sa.JSON().with_variant(JSONB, "postgresql"), nullable=False, default=dict
+    )
+    recorded_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+    is_valid: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True, index=True)
+
+    # Relationships
+    edge = orm_relationship("KnowledgeGraphEdge", back_populates="evidences")
+    user = orm_relationship("User")
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<KnowledgeEvidence id={self.id} type={self.evidence_type} rel={self.relationship_id}>"
+
+
+class KnowledgeGraphVersion(Base, UUIDPKMixin, TimestampMixin):
+    """
+    Audit log and incremental version history of user's personal knowledge graph.
+    """
+    __tablename__ = "knowledge_graph_versions"
+    __table_args__ = (
+        Index("ix_kg_versions_user_ver", "user_id", "version_number", unique=True),
+        Index("ix_kg_versions_created", "created_at"),
+        {"extend_existing": True},
+    )
+
+    user_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    version_number: Mapped[int] = mapped_column(Integer, nullable=False, default=1)
+    change_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    affected_node_ids: Mapped[List[str]] = mapped_column(
+        sa.JSON().with_variant(JSONB, "postgresql"), nullable=False, default=list
+    )
+    affected_relationship_ids: Mapped[List[str]] = mapped_column(
+        sa.JSON().with_variant(JSONB, "postgresql"), nullable=False, default=list
+    )
+    change_summary: Mapped[str] = mapped_column(String(512), nullable=False)
+    version_metadata: Mapped[Dict[str, Any]] = mapped_column(
+        sa.JSON().with_variant(JSONB, "postgresql"), nullable=False, default=dict
+    )
+
+    user = orm_relationship("User")
+
+    def __repr__(self) -> str:  # pragma: no cover
+        return f"<KnowledgeGraphVersion user={self.user_id} v={self.version_number} type={self.change_type}>"
+
+
+# Canonical Aliases
+KnowledgeNode = KnowledgeGraphNode
+KnowledgeRelationship = KnowledgeGraphEdge
+
+
 
 
 # ===========================================================================
@@ -170,6 +254,7 @@ class Project(Base, UUIDPKMixin, TimestampMixin):
     __tablename__ = "projects"
     __table_args__ = (
         Index("ix_projects_user_status", "user_id", "status"),
+        {"extend_existing": True},
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -186,8 +271,8 @@ class Project(Base, UUIDPKMixin, TimestampMixin):
         default=dict,
     )
 
-    user = relationship("User")
-    milestones = relationship("Milestone", back_populates="project", cascade="all, delete-orphan")
+    user = orm_relationship("User")
+    milestones = orm_relationship("Milestone", back_populates="project", cascade="all, delete-orphan")
 
 
 class Goal(Base, UUIDPKMixin, TimestampMixin):
@@ -198,6 +283,7 @@ class Goal(Base, UUIDPKMixin, TimestampMixin):
     __table_args__ = (
         Index("ix_goals_user_status", "user_id", "status"),
         Index("ix_goals_category", "category"),
+        {"extend_existing": True},
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -215,8 +301,8 @@ class Goal(Base, UUIDPKMixin, TimestampMixin):
         default=dict,
     )
 
-    user = relationship("User")
-    milestones = relationship("Milestone", back_populates="goal", cascade="all, delete-orphan")
+    user = orm_relationship("User")
+    milestones = orm_relationship("Milestone", back_populates="goal", cascade="all, delete-orphan")
 
 
 class Milestone(Base, UUIDPKMixin, TimestampMixin):
@@ -227,6 +313,7 @@ class Milestone(Base, UUIDPKMixin, TimestampMixin):
     __table_args__ = (
         Index("ix_milestones_project", "project_id"),
         Index("ix_milestones_goal", "goal_id"),
+        {"extend_existing": True},
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -248,9 +335,9 @@ class Milestone(Base, UUIDPKMixin, TimestampMixin):
         default=dict,
     )
 
-    user = relationship("User")
-    project = relationship("Project", back_populates="milestones")
-    goal = relationship("Goal", back_populates="milestones")
+    user = orm_relationship("User")
+    project = orm_relationship("Project", back_populates="milestones")
+    goal = orm_relationship("Goal", back_populates="milestones")
 
 
 class Habit(Base, UUIDPKMixin, TimestampMixin):
@@ -260,6 +347,7 @@ class Habit(Base, UUIDPKMixin, TimestampMixin):
     __tablename__ = "habits"
     __table_args__ = (
         Index("ix_habits_user_status", "user_id", "status"),
+        {"extend_existing": True},
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -277,7 +365,7 @@ class Habit(Base, UUIDPKMixin, TimestampMixin):
         default=dict,
     )
 
-    user = relationship("User")
+    user = orm_relationship("User")
 
 
 class BehavioralPattern(Base, UUIDPKMixin, TimestampMixin):
@@ -287,6 +375,7 @@ class BehavioralPattern(Base, UUIDPKMixin, TimestampMixin):
     __tablename__ = "behavioral_patterns"
     __table_args__ = (
         Index("ix_patterns_user_cat", "user_id", "pattern_category"),
+        {"extend_existing": True},
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -307,7 +396,7 @@ class BehavioralPattern(Base, UUIDPKMixin, TimestampMixin):
         DateTime(timezone=True), nullable=False, default=utcnow
     )
 
-    user = relationship("User")
+    user = orm_relationship("User")
 
 
 class Decision(Base, UUIDPKMixin, TimestampMixin):
@@ -318,6 +407,7 @@ class Decision(Base, UUIDPKMixin, TimestampMixin):
     __table_args__ = (
         Index("ix_decisions_user_type", "user_id", "decision_type"),
         Index("ix_decisions_time", "decided_at"),
+        {"extend_existing": True},
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -341,7 +431,7 @@ class Decision(Base, UUIDPKMixin, TimestampMixin):
         default=dict,
     )
 
-    user = relationship("User")
+    user = orm_relationship("User")
 
 
 class Outcome(Base, UUIDPKMixin, TimestampMixin):
@@ -352,6 +442,7 @@ class Outcome(Base, UUIDPKMixin, TimestampMixin):
     __table_args__ = (
         Index("ix_outcomes_user_type", "user_id", "outcome_type"),
         Index("ix_outcomes_time", "achieved_at"),
+        {"extend_existing": True},
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -374,7 +465,7 @@ class Outcome(Base, UUIDPKMixin, TimestampMixin):
         default=dict,
     )
 
-    user = relationship("User")
+    user = orm_relationship("User")
 
 
 class Resource(Base, UUIDPKMixin, TimestampMixin):
@@ -384,6 +475,7 @@ class Resource(Base, UUIDPKMixin, TimestampMixin):
     __tablename__ = "resources"
     __table_args__ = (
         Index("ix_resources_user_type", "user_id", "resource_type"),
+        {"extend_existing": True},
     )
 
     user_id: Mapped[uuid.UUID] = mapped_column(
@@ -399,4 +491,4 @@ class Resource(Base, UUIDPKMixin, TimestampMixin):
         default=dict,
     )
 
-    user = relationship("User")
+    user = orm_relationship("User")

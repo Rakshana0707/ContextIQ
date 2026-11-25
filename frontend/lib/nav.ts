@@ -113,6 +113,12 @@ export const navItems: NavItem[] = [
     icon: Zap,
     description: "User-defined proactive rules, triggers & governed actions",
   },
+  {
+    href: "/graph",
+    label: "Knowledge Graph",
+    icon: GitFork,
+    description: "Personal productivity knowledge graph & causal evidence explorer",
+  },
 ];
 
 export const adaptiveNavItems: NavItem[] = [

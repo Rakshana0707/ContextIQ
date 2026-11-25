@@ -23,15 +23,23 @@ class KnowledgeNodeBase(BaseModel):
     entity_id: uuid.UUID
     entity_table: str = Field(..., max_length=64)
     properties: Dict[str, Any] = Field(default_factory=dict)
+    is_archived: bool = False
 
 
 class KnowledgeNodeCreate(KnowledgeNodeBase):
     pass
 
 
+class KnowledgeNodeUpdate(BaseModel):
+    name: Optional[str] = Field(default=None, max_length=255)
+    properties: Optional[Dict[str, Any]] = None
+    is_archived: Optional[bool] = None
+
+
 class KnowledgeNodeRead(KnowledgeNodeBase):
     id: uuid.UUID
     user_id: uuid.UUID
+    archived_at: Optional[datetime] = None
     created_at: datetime
     updated_at: datetime
 
@@ -85,15 +93,68 @@ class KnowledgeEdgeCreate(KnowledgeEdgeBase):
     pass
 
 
+class KnowledgeEdgeUpdate(BaseModel):
+    confidence: Optional[float] = Field(default=None, ge=0.0, le=1.0)
+    weight: Optional[float] = Field(default=None, ge=0.0)
+    valid_until: Optional[datetime] = None
+    provenance_payload: Optional[Dict[str, Any]] = None
+
+
+class KnowledgeEvidenceBase(BaseModel):
+    evidence_type: str = Field(default="EXPLICIT_USER", max_length=64)
+    source_entity_id: Optional[uuid.UUID] = None
+    source_entity_table: Optional[str] = Field(default=None, max_length=64)
+    confidence_score: float = Field(default=1.0, ge=0.0, le=1.0)
+    payload: Dict[str, Any] = Field(default_factory=dict)
+    is_valid: bool = True
+
+
+class KnowledgeEvidenceCreate(KnowledgeEvidenceBase):
+    relationship_id: uuid.UUID
+
+
+class KnowledgeEvidenceRead(KnowledgeEvidenceBase):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    relationship_id: uuid.UUID
+    recorded_at: datetime
+    created_at: datetime
+    updated_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class KnowledgeEdgeRead(KnowledgeEdgeBase):
     id: uuid.UUID
     user_id: uuid.UUID
     source_entity_id: Optional[uuid.UUID] = None
     target_entity_id: Optional[uuid.UUID] = None
+    evidences: List[KnowledgeEvidenceRead] = Field(default_factory=list)
     created_at: datetime
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class KnowledgeGraphVersionRead(BaseModel):
+    id: uuid.UUID
+    user_id: uuid.UUID
+    version_number: int
+    change_type: str
+    affected_node_ids: List[str]
+    affected_relationship_ids: List[str]
+    change_summary: str
+    version_metadata: Dict[str, Any]
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
+# Aliases for Phase 8.2 terminology
+KnowledgeNode = KnowledgeNodeRead
+KnowledgeRelationship = KnowledgeEdgeRead
+KnowledgeRelationshipCreate = KnowledgeEdgeCreate
+KnowledgeRelationshipUpdate = KnowledgeEdgeUpdate
 
 
 # ===========================================================================
@@ -386,3 +447,55 @@ class OutcomeDecisionTraceResponse(BaseModel):
     decision_trail: List[Dict[str, Any]]
     workflow_id: Optional[uuid.UUID] = None
     attribution_confidence: float
+
+
+# ===========================================================================
+# Phase 8.2 Graph Overview, Traversal, and Management Schemas
+# ===========================================================================
+
+class GraphOverviewResponse(BaseModel):
+    total_nodes: int
+    total_relationships: int
+    node_type_counts: Dict[str, int]
+    relationship_type_counts: Dict[str, int]
+    current_version: int
+    inferred_relationship_count: int
+    explicit_relationship_count: int
+    recent_changes: List[KnowledgeGraphVersionRead]
+
+
+class DirectRelationshipsResponse(BaseModel):
+    node: KnowledgeNodeRead
+    outgoing: List[KnowledgeEdgeRead]
+    incoming: List[KnowledgeEdgeRead]
+    total_connections: int
+
+
+class TraversalStep(BaseModel):
+    node: KnowledgeNodeRead
+    edge: KnowledgeEdgeRead
+    depth: int
+
+
+class MultiHopPathItem(BaseModel):
+    path: List[KnowledgeNodeRead]
+    edges: List[KnowledgeEdgeRead]
+    path_confidence: float
+    has_inferred_steps: bool
+    depth: int
+
+
+class MultiHopTraversalResponse(BaseModel):
+    root_node_id: uuid.UUID
+    max_depth_reached: int
+    paths: List[MultiHopPathItem]
+    visited_nodes_count: int
+
+
+class AutoPopulateSummaryResponse(BaseModel):
+    created_nodes_count: int
+    created_edges_count: int
+    attached_evidence_count: int
+    new_version: int
+    summary_messages: List[str]
+
