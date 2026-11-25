@@ -176,3 +176,49 @@ class RecoveryState(str, Enum):
     TASK_COMPLETED = "TASK_COMPLETED"
     RECOVERY_NOT_OBSERVED = "RECOVERY_NOT_OBSERVED"
 
+
+class GraphNodeType(str, Enum):
+    """Supported node types in the unified ContextIQ Knowledge Graph (Phase 8.1)."""
+    USER = "USER"
+    TASK = "TASK"
+    PROJECT = "PROJECT"
+    GOAL = "GOAL"
+    MILESTONE = "MILESTONE"
+    HABIT = "HABIT"
+    BEHAVIORAL_PATTERN = "BEHAVIORAL_PATTERN"
+    CONTEXT = "CONTEXT"
+    INTERRUPTION = "INTERRUPTION"
+    RECOMMENDATION = "RECOMMENDATION"
+    DECISION = "DECISION"
+    CALENDAR_EVENT = "CALENDAR_EVENT"
+    WORKFLOW = "WORKFLOW"
+    OUTCOME = "OUTCOME"
+    RESOURCE = "RESOURCE"
+
+
+class GraphRelationshipType(str, Enum):
+    """Directional relationship semantics linking entities across the Knowledge Graph."""
+    BELONGS_TO = "BELONGS_TO"
+    DEPENDS_ON = "DEPENDS_ON"
+    CONTRIBUTES_TO = "CONTRIBUTES_TO"
+    BLOCKS = "BLOCKS"
+    RELATED_TO = "RELATED_TO"
+    GENERATED_BY = "GENERATED_BY"
+    INFLUENCES = "INFLUENCES"
+    PRECEDED_BY = "PRECEDED_BY"
+    RESULTED_IN = "RESULTED_IN"
+    SUPPORTS = "SUPPORTS"
+    CONFLICTS_WITH = "CONFLICTS_WITH"
+    COMPLETED_AS = "COMPLETED_AS"
+    DERIVED_FROM = "DERIVED_FROM"
+
+
+class KnowledgeEvidenceSource(str, Enum):
+    """Formal provenance source of knowledge facts and relationships."""
+    EXPLICIT_USER = "EXPLICIT_USER"
+    APPLICATION_EVENT = "APPLICATION_EVENT"
+    CALENDAR_IMPORT = "CALENDAR_IMPORT"
+    STATISTICAL_ANALYSIS = "STATISTICAL_ANALYSIS"
+    ML_PREDICTION = "ML_PREDICTION"
+    LLM_HYPOTHESIS = "LLM_HYPOTHESIS"
+

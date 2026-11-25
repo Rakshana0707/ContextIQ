@@ -75,11 +75,31 @@ from app.models.safety_models import (
     WorkflowRollbackRecord,
     EmergencyStopEvent,
 )
+from app.models.knowledge_graph import (  # noqa: F401
+    KnowledgeGraphNode,
+    KnowledgeGraphEdge,
+    Project,
+    Goal,
+    Milestone,
+    Habit,
+    BehavioralPattern,
+    Decision,
+    Outcome,
+    Resource,
+)
 
-from app.models.enums import RecoveryState  # noqa: F401
+from app.models.enums import (  # noqa: F401
+    RecoveryState,
+    GraphNodeType,
+    GraphRelationshipType,
+    KnowledgeEvidenceSource,
+)
 
 __all__ = [
     "RecoveryState",
+    "GraphNodeType",
+    "GraphRelationshipType",
+    "KnowledgeEvidenceSource",
 
     "User",
     "Location",
@@ -143,6 +163,17 @@ __all__ = [
     "WorkflowApprovalRecord",
     "WorkflowRollbackRecord",
     "EmergencyStopEvent",
+    "KnowledgeGraphNode",
+    "KnowledgeGraphEdge",
+    "Project",
+    "Goal",
+    "Milestone",
+    "Habit",
+    "BehavioralPattern",
+    "Decision",
+    "Outcome",
+    "Resource",
 ]
+
 
 

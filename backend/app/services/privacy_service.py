@@ -1,7 +1,7 @@
 import hashlib
 import uuid
 from datetime import datetime, timedelta, timezone
-from typing import Optional
+from typing import Any, Optional
 
 from sqlalchemy import delete, func, select, text
 from sqlalchemy.orm import Session
