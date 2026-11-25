@@ -30,6 +30,7 @@ import type {
   RecoveryPredictionData,
 } from "@/types/telemetry";
 import { RecoveryPredictionCard } from "./recovery-prediction-card";
+import { SequencePredictionCard } from "./sequence-prediction-card";
 
 interface RecoveryAnalyticsPanelProps {
   recovery: RecoveryAnalyticsData | null;
@@ -260,6 +261,9 @@ export function RecoveryAnalyticsPanel({
           </div>
         </CardContent>
       </Card>
+
+      {/* Phase 6.5: Temporal Behavioral Sequence Modeling & Benchmarking */}
+      <SequencePredictionCard />
     </div>
   );
 }

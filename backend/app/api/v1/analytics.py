@@ -241,4 +241,34 @@ def compare_counterfactuals_analytics(
     return CounterfactualService.compare_interventions(db=db, request=req)
 
 
+@router.get("/analytics/sequence/predict")
+def predict_sequence_analytics(
+    target: str = "short_term_task_resumption",
+    db: Session = Depends(get_db),
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Forecasts target using sequence model via analytics router."""
+    from app.schemas.temporal_sequence import SequencePredictionTarget
+    from app.services.sequence_prediction_service import SequencePredictionService
+
+    return SequencePredictionService.predict_sequence(
+        db=db,
+        user_id=user_id,
+        target=SequencePredictionTarget(target),
+    )
+
+
+@router.get("/analytics/sequence/benchmark")
+def get_sequence_benchmark_analytics(
+    target: str = "short_term_task_resumption",
+    user_id: uuid.UUID = Depends(get_current_user_id),
+):
+    """Retrieves candidate sequence model benchmark via analytics router."""
+    from app.schemas.temporal_sequence import SequencePredictionTarget
+    from app.services.sequence_prediction_service import SequencePredictionService
+
+    return SequencePredictionService.get_or_run_benchmark(target=SequencePredictionTarget(target))
+
+
+
 
