@@ -30,7 +30,7 @@ from app.schemas.event_schemas import (
     StandardEvent,
     StandardEventType,
 )
-from app.services.automation_engine import AutomationRuleEvaluator
+from app.services.automation_engine import AutomationTriggerEngine
 from app.services.proactive_intelligence import ProactiveIntelligenceService
 
 logger = logging.getLogger(__name__)
@@ -220,15 +220,15 @@ class EventProcessor:
         matched_rules_count = 0
         executions_created_count = 0
         try:
-            rule_results = AutomationRuleEvaluator.evaluate_event(
+            rule_eval = AutomationTriggerEngine.evaluate_trigger(
                 db=db,
                 user_id=event.user_id,
-                event_type=event.event_type,
-                event_payload=event.payload,
-                as_of=current_time,
+                trigger_type=event.event_type,
+                trigger_event_id=event.event_id,
+                context_payload=event.payload,
             )
-            matched_rules_count = len(rule_results)
-            executions_created_count = sum(1 for r in rule_results if r.status in ("PENDING", "APPROVED", "COMPLETED"))
+            matched_rules_count = rule_eval.matched_rules_count
+            executions_created_count = sum(1 for r in rule_eval.results if r.is_matched)
         except Exception as ex:
             logger.error(f"Rule evaluation encountered error for event {event.event_id}: {ex}")
 
