@@ -151,6 +151,12 @@ export const navItems: NavItem[] = [
     icon: Activity,
     description: "Long-term behavioral evolution, milestones & baseline drift",
   },
+  {
+    href: "/assistant",
+    label: "Assistant",
+    icon: Sparkles,
+    description: "Knowledge-grounded conversational productivity intelligence",
+  },
 ];
 
 export const adaptiveNavItems: NavItem[] = [

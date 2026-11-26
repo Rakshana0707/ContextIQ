@@ -60,6 +60,7 @@ export { goalProjectApi } from "@/lib/api/services/goal_project";
 export { taskDependencyApi } from "@/lib/api/services/task_dependency";
 export { projectForecastApi } from "@/lib/api/services/project_forecast";
 export { behavioralTrendApi } from "@/lib/api/services/behavioral_trend";
+export { assistantApi } from "@/lib/api/services/assistant";
 
 
 

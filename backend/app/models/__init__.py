@@ -131,6 +131,10 @@ from app.models.behavioral_trend import (  # noqa: F401
     TrendDirection,
     TemporalGranularity,
 )
+from app.models.assistant import (  # noqa: F401
+    AssistantConversation,
+    AssistantMessage,
+)
 
 from app.models.enums import (  # noqa: F401
     RecoveryState,
@@ -251,6 +255,8 @@ __all__ = [
     "TrendCategory",
     "TrendDirection",
     "TemporalGranularity",
+    "AssistantConversation",
+    "AssistantMessage",
 ]
 
 
