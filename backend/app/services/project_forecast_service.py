@@ -543,6 +543,8 @@ class ProjectForecastService:
             recommended_interventions=interventions,
         )
 
+    simulate_scenario = run_scenario_simulation
+
     # -----------------------------------------------------------------------
     # 4. Model Evaluation & Benchmarking
     # -----------------------------------------------------------------------

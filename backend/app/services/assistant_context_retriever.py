@@ -250,12 +250,14 @@ class AssistantContextRetriever:
             ms_list = []
             if p.milestones:
                 for ms in p.milestones:
+                    due = getattr(ms, "due_date", None) or getattr(ms, "target_date", None)
+                    prog = getattr(ms, "progress_pct", 1.0 if getattr(ms, "is_completed", False) else 0.0)
                     ms_list.append({
                         "id": str(ms.id),
                         "title": ms.title,
                         "status": ms.status,
-                        "target_date": ms.target_date.isoformat() if ms.target_date else None,
-                        "progress_pct": ms.progress_pct,
+                        "target_date": due.isoformat() if due else None,
+                        "progress_pct": prog,
                     })
 
             pf = forecast_by_project.get(p.id)
