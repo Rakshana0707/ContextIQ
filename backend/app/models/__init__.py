@@ -123,6 +123,14 @@ from app.models.project_forecast import (  # noqa: F401
     DataSufficiencyStatus,
     ForecastingModelType,
 )
+from app.models.behavioral_trend import (  # noqa: F401
+    BehavioralDailyMetric,
+    BehavioralMilestoneRecord,
+    BehavioralChangePoint,
+    TrendCategory,
+    TrendDirection,
+    TemporalGranularity,
+)
 
 from app.models.enums import (  # noqa: F401
     RecoveryState,
@@ -237,6 +245,12 @@ __all__ = [
     "DelayRiskTier",
     "DataSufficiencyStatus",
     "ForecastingModelType",
+    "BehavioralDailyMetric",
+    "BehavioralMilestoneRecord",
+    "BehavioralChangePoint",
+    "TrendCategory",
+    "TrendDirection",
+    "TemporalGranularity",
 ]
 
 

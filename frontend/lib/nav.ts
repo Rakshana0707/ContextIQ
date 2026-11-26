@@ -145,6 +145,12 @@ export const navItems: NavItem[] = [
     icon: TrendingUp,
     description: "Probabilistic completion timeline, uncertainty & what-if scenarios",
   },
+  {
+    href: "/trends",
+    label: "Behavioral Trends",
+    icon: Activity,
+    description: "Long-term behavioral evolution, milestones & baseline drift",
+  },
 ];
 
 export const adaptiveNavItems: NavItem[] = [

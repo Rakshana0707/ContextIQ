@@ -36,6 +36,7 @@ from app.api.v1.behavioral_memory import router as behavioral_memory_router
 from app.api.v1.goals import router as goals_router
 from app.api.v1.dependencies import dependencies_router
 from app.api.v1.forecasts import forecasts_router
+from app.api.v1.trends import trends_router
 
 api_router = APIRouter()
 
@@ -75,4 +76,5 @@ api_router.include_router(behavioral_memory_router)
 api_router.include_router(goals_router)
 api_router.include_router(dependencies_router)
 api_router.include_router(forecasts_router)
+api_router.include_router(trends_router)
 
