@@ -135,6 +135,9 @@ from app.models.assistant import (  # noqa: F401
     AssistantConversation,
     AssistantMessage,
 )
+from app.models.analytics_workspace import (  # noqa: F401
+    SavedAnalyticsQuery,
+)
 
 from app.models.enums import (  # noqa: F401
     RecoveryState,
@@ -257,6 +260,7 @@ __all__ = [
     "TemporalGranularity",
     "AssistantConversation",
     "AssistantMessage",
+    "SavedAnalyticsQuery",
 ]
 
 

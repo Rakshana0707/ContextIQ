@@ -157,6 +157,12 @@ export const navItems: NavItem[] = [
     icon: Sparkles,
     description: "Knowledge-grounded conversational productivity intelligence",
   },
+  {
+    href: "/analytics/workspace",
+    label: "Analytics Workspace",
+    icon: TrendingUp,
+    description: "Natural-language productivity analytics & decision intelligence",
+  },
 ];
 
 export const adaptiveNavItems: NavItem[] = [

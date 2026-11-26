@@ -38,6 +38,7 @@ from app.api.v1.dependencies import dependencies_router
 from app.api.v1.forecasts import forecasts_router
 from app.api.v1.trends import trends_router
 from app.api.v1.assistant import assistant_router
+from app.api.v1.natural_language_analytics import nl_analytics_router
 
 api_router = APIRouter()
 
@@ -79,4 +80,5 @@ api_router.include_router(dependencies_router)
 api_router.include_router(forecasts_router)
 api_router.include_router(trends_router)
 api_router.include_router(assistant_router)
+api_router.include_router(nl_analytics_router)
 

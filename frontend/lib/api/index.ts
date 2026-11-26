@@ -61,6 +61,7 @@ export { taskDependencyApi } from "@/lib/api/services/task_dependency";
 export { projectForecastApi } from "@/lib/api/services/project_forecast";
 export { behavioralTrendApi } from "@/lib/api/services/behavioral_trend";
 export { assistantApi } from "@/lib/api/services/assistant";
+export { analyticsWorkspaceApi } from "@/lib/api/services/analytics_workspace";
 
 
 
