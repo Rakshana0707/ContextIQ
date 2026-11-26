@@ -117,6 +117,12 @@ from app.models.task_dependency import (  # noqa: F401
     DependencyValidationStatus,
     DependencyDetectionMethod,
 )
+from app.models.project_forecast import (  # noqa: F401
+    ProjectForecast,
+    DelayRiskTier,
+    DataSufficiencyStatus,
+    ForecastingModelType,
+)
 
 from app.models.enums import (  # noqa: F401
     RecoveryState,
@@ -227,6 +233,10 @@ __all__ = [
     "TaskDependencyType",
     "DependencyValidationStatus",
     "DependencyDetectionMethod",
+    "ProjectForecast",
+    "DelayRiskTier",
+    "DataSufficiencyStatus",
+    "ForecastingModelType",
 ]
 
 

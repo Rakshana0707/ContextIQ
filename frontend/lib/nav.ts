@@ -20,6 +20,7 @@ import {
   Laptop,
   MapPin,
   Target,
+  TrendingUp,
 } from "lucide-react";
 
 export interface NavItem {
@@ -137,6 +138,12 @@ export const navItems: NavItem[] = [
     label: "Dependencies",
     icon: GitFork,
     description: "Cross-task dependencies, latent blockers & impact analysis",
+  },
+  {
+    href: "/forecasts",
+    label: "Project Forecasting",
+    icon: TrendingUp,
+    description: "Probabilistic completion timeline, uncertainty & what-if scenarios",
   },
 ];
 
